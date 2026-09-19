@@ -1,0 +1,35 @@
+# Render Blueprint：免费 Web Service（新加坡区，Docker 运行时）
+# 密钥类环境变量在 Render 控制台补填（sync: false 占位，不会被蓝图覆盖）
+services:
+  - type: web
+    name: landfillmind
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+      - key: DB_PATH
+        value: /app/data/chat.db
+      - key: TRUST_PROXY
+        value: "1"
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_BASE_URL
+        value: https://open.bigmodel.cn/api/paas/v4
+      - key: OPENAI_MODEL
+        value: glm-4-flash-250414
+      - key: OPENAI_MODELS
+        value: glm-4-flash-250414,glm-4.5-flash,glm-4-air-250414,glm-4-plus,glm-4.5-air,glm-4-long,glm-4.6
+      - key: OPENAI_LABEL
+        value: 智谱 GLM（直连）
+      - key: RATE_LIMIT_PER_MIN
+        value: "40"
+      - key: RATE_LIMIT_PER_DAY
+        value: "1000"
+      - key: RATE_LIMIT_GLOBAL_PER_DAY
+        value: "1000"

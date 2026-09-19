@@ -1,0 +1,69 @@
+{
+  "_meta": {
+    "version": "1.0",
+    "domain": "landfill-monitoring",
+    "last_updated": "2026-08-22",
+    "schema_doc": "knowledge-base/README.md"
+  },
+  "categories": {
+    "slope": {
+      "description": "边坡稳定相关知识条目",
+      "keywords": ["边坡", "稳定", "Fs", "圆弧", "滑坡", "位移", "沉降", "坝"],
+      "expected_count": 25
+    },
+    "leachate": {
+      "description": "渗滤液收集处理",
+      "keywords": ["渗滤液", "导排", "调节池", "HELP", "水量", "盲沟"],
+      "expected_count": 20
+    },
+    "lfg": {
+      "description": "填埋气监测与利用",
+      "keywords": ["甲烷", "填埋气", "CH4", "LandGEM", "导气井", "火炬", "爆炸极限"],
+      "expected_count": 20
+    },
+    "groundwater": {
+      "description": "地下水监测",
+      "keywords": ["地下水", "监测井", "Cl", "氨氮", "COD", "污染羽", "HJ 25.6"],
+      "expected_count": 18
+    },
+    "liner": {
+      "description": "防渗系统",
+      "keywords": ["防渗", "HDPE", "GCL", "衬层", "黏土", "锚固沟"],
+      "expected_count": 15
+    },
+    "operations": {
+      "description": "日常运营与封场",
+      "keywords": ["作业", "压实", "覆盖", "封场", "植被", "运营", "中间覆盖"],
+      "expected_count": 15
+    },
+    "safety": {
+      "description": "工友安全与应急",
+      "keywords": ["H2S", "防护", "有限空间", "应急", "疏散", "PPE", "下井"],
+      "expected_count": 15
+    },
+    "regulations": {
+      "description": "法规依据与标准",
+      "keywords": ["GB 16889", "CJJ 176", "HJ 25", "GB 36600", "标准", "规范"],
+      "expected_count": 12
+    }
+  },
+  "schema": {
+    "kb_entry": {
+      "key": "string (e.g. slope-fs-warning)",
+      "module": "m6 | m62",
+      "kw": ["array", "of", "keywords"],
+      "q": "string (question template)",
+      "pro": "string (professional answer)",
+      "easy": "string (layman answer)",
+      "cite": "string (citation: GB/CJJ/HJ code + clause)",
+      "clause": "string (specific clause text)",
+      "related": ["array", "of", "related", "keys"],
+      "calc": "string | null (calc name if applicable)"
+    }
+  },
+  "injection_targets": {
+    "server/kb.ts": "原生 KB 表（66 条 → 目标 130+ 条）",
+    "system_prompt": "蒸馏 → agent 系统提示词",
+    "few_shot_examples": "训练样本（按类别分组）"
+  }
+}

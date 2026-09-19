@@ -1,0 +1,822 @@
+{
+  "metadata": {
+    "title": "中国生活垃圾填埋场事故案例库 (2010-2024)",
+    "purpose": "AI Agent 风险情景生成与少样本提示训练数据集",
+    "version": "1.0",
+    "compiled_at": "2026-08-22",
+    "total_incidents": 15,
+    "incident_types": [
+      "landslide",
+      "leachate_leak",
+      "groundwater_contamination",
+      "gas_explosion",
+      "suffocation_poisoning",
+      "structural_collapse",
+      "dam_failure",
+      "drowning",
+      "electrocution"
+    ],
+    "scope": "中国大陆地区生活垃圾填埋场及相关垃圾处理设施(含渣土受纳场、渗滤液处理厂、厌氧发酵设施)事故",
+    "standards_referenced": [
+      "GB 16889-2008/2024 生活垃圾填埋场污染控制标准",
+      "GB 14554-93 恶臭污染物排放标准",
+      "CJJ 17-2004/2018 生活垃圾卫生填埋处理技术规范",
+      "CJJ 113-2007 生活垃圾卫生填埋场防渗系统工程技术规范",
+      "GB/T 25245-2010 垃圾填埋场岩土工程勘察技术规程",
+      "AQ 3021-2008 化学品生产单位受限空间作业安全规范",
+      "GBZ 2.1-2019 工业场所有害因素职业接触限值"
+    ],
+    "data_sources_summary": [
+      "国务院/省市政府安全事故调查报告",
+      "中央生态环境保护督察通报",
+      "新京报、澎湃新闻、中新网、新华网等媒体报道",
+      "环卫科技网、中国固废网行业分析",
+      "中国知网/万方学术论文",
+      "国家应急管理部及地方应急管理局通报"
+    ]
+  },
+  "incidents": [
+    {
+      "id": "INC-2015-12-20-Shenzhen",
+      "title": "深圳光明新区红坳渣土受纳场'12·20'特别重大滑坡事故",
+      "date": "2015-12-20",
+      "location": {
+        "city": "深圳市",
+        "district": "光明新区光明办事处",
+        "province": "广东省"
+      },
+      "incident_type": "landslide",
+      "casualties": {
+        "deaths": 73,
+        "missing": 4,
+        "injured": 17,
+        "economic_loss_yuan": 812000000
+      },
+      "scale": {
+        "landslide_volume_m3": 2470000,
+        "affected_area_m2": 380000
+      },
+      "root_cause_5why": [
+        "Why 1 (直接原因)：未采取有效支护措施违规堆填，堆填体下覆含水量高的建筑垃圾弃土，堆填过程多次出现滑移迹象；当日违规作业形成滑动面。",
+        "Why 2 (作业违规)：渣土受纳场未经正规勘察设计即投入使用，长期违法堆填，堆填速率、规模未受控。",
+        "Why 3 (审批缺失)：运营方未依法依规办理渣土受纳场相关证照，未编制岩土工程勘察报告和堆填设计方案。",
+        "Why 4 (监管失职)：现场管理混乱；建设、城管、国土等部门安全监管不到位、执法监察不力。",
+        "Why 5 (系统性问题)：地方政府对非法受纳场整治力度不够，安全发展理念缺失，未落实安全生产党政同责。"
+      ],
+      "lessons_learned": [
+        "严格落实工程地质勘察，查明水文地质条件(地下水、孔隙水压力、土体含水量及软弱夹层)",
+        "填埋作业必须分层碾压，控制堆填速率、规模和坡比",
+        "完善截排水系统、坡面防护及变形监测",
+        "布置位移、沉降、孔隙水压力监测点，建立滑坡预警机制",
+        "对违规渣土场开展专项整治，落实属地管理责任"
+      ],
+      "remediation_actions": [
+        "国务院成立事故调查组，53人被追责，2名主要责任人获刑",
+        "深圳开展全市渣土受纳场、垃圾填埋场专项排查整治",
+        "建立'政府主导、企业主体'的安全生产责任体系"
+      ],
+      "standards_violated": [
+        "GB 50421-2007 金属露天矿采矿设计规范(类比)：未做工程地质勘察",
+        "CJJ 17-2004 第3.0.1条：填埋场选址未经勘察设计",
+        "《安全生产法》第17条：未落实安全管理责任",
+        "《建筑法》：未办理规划、施工许可"
+      ],
+      "source_url": "https://www.engineering.org.cn/engi/CN/1159829418824753514",
+      "secondary_sources": [
+        "http://news.xinhuanet.com/politics/2016-03/09/c_1118283481.htm",
+        "国务院调查报告(2016年2月发布)"
+      ],
+      "tags": ["重大事故", "渣土受纳场", "群死群伤", "国务院调查", "岩土工程"]
+    },
+    {
+      "id": "INC-2020-01-01-Hangzhou",
+      "title": "杭州天子岭垃圾填埋场'1·1'沼气窒息事故",
+      "date": "2020-01-01",
+      "location": {
+        "city": "杭州市",
+        "district": "拱墅区",
+        "province": "浙江省"
+      },
+      "incident_type": "suffocation_poisoning",
+      "casualties": {
+        "deaths": 1,
+        "missing": 0,
+        "injured": 4,
+        "economic_loss_yuan": null
+      },
+      "victim_info": {
+        "name": "王玉宽",
+        "age": 40,
+        "gender": "male",
+        "cause": "呼吸心跳骤停，窒息(气体性)"
+      },
+      "root_cause_5why": [
+        "Why 1：5名辅助作业人员在凌晨静风条件下掀开填埋作业面临时覆盖膜，瞬时接触高浓度填埋气(甲烷、硫化氢等)。",
+        "Why 2：事发位置地形特殊(凹地)、扩散条件差，凌晨静风导致填埋气局部大量积聚。",
+        "Why 3：作业前未进行气体浓度检测，未识别高风险时段/天气条件下的作业风险。",
+        "Why 4：现场安全管理松懈，未按有限空间作业规程配置防护装备和应急器材。",
+        "Why 5：天子岭场长期超负荷运行(峰值10000吨/天 vs 设计3500吨/天)，堆体老化使填埋气释放强度高，安全管理未相应提升。"
+      ],
+      "lessons_learned": [
+        "有限空间作业前必须进行气体检测(氧气、可燃气体、硫化氢)",
+        "严禁在静风、夜间等扩散条件差时段进行覆盖膜掀揭作业",
+        "作业人员必须佩戴正压式空气呼吸器、防毒面具",
+        "建立气体监测预警系统，识别填埋气积聚高风险区域"
+      ],
+      "remediation_actions": [
+        "天子岭场于2020年12月终止填埋并封场",
+        "事故后开展全市填埋场作业安全专项检查",
+        "修订完善《填埋作业操作规程》"
+      ],
+      "standards_violated": [
+        "AQ 3021-2008 第5条：未进行气体检测和通风",
+        "GB 14554-93 恶臭污染物排放标准：填埋气未有效收集处理",
+        "CJJ 17-2018 第11章：填埋作业安全管理要求未落实",
+        "GBZ 2.1-2019：作业场所硫化氢/甲烷浓度超过职业接触限值"
+      ],
+      "source_url": "https://m.chinanews.com/wap/detail/cht/zw/9048968.shtml",
+      "secondary_sources": [
+        "https://www.peopleapp.com/rmharticle/30014463804",
+        "https://thepaper.cn/newsDetail_forward_5401966"
+      ],
+      "tags": ["填埋气", "窒息", "有限空间", "凌晨作业", "静风条件"]
+    },
+    {
+      "id": "INC-2020-01-14-Hangzhou",
+      "title": "杭州天子岭循环经济产业园'1·14'厌氧罐较大爆炸事故",
+      "date": "2020-01-14",
+      "location": {
+        "city": "杭州市",
+        "district": "拱墅区",
+        "province": "浙江省"
+      },
+      "incident_type": "gas_explosion",
+      "casualties": {
+        "deaths": 3,
+        "missing": 0,
+        "injured": 0,
+        "economic_loss_yuan": null
+      },
+      "scale": {
+        "ejection_distance_m": 150,
+        "equipment": "餐厨二期项目4号厌氧罐"
+      },
+      "root_cause_5why": [
+        "Why 1：施工人员在4号厌氧罐顶安装正负压保护器时，罐内甲烷(沼气)与空气混合达爆炸极限，遇点火源引发化学爆炸。",
+        "Why 2：作业人员(分包队伍)在罐顶违章吸烟，引爆罐内甲烷-空气混合物。",
+        "Why 3：厌氧罐检修作业未执行动火作业许可、罐内气体置换不彻底；点火源管控不到位。",
+        "Why 4：项目违规分包，承包单位安全管理薄弱；杭州市环境集团对分包单位监管缺失。",
+        "Why 5：餐厨垃圾处理项目工期紧，新工艺(厌氧发酵)安全管理经验不足，行业安全规范缺位。"
+      ],
+      "lessons_learned": [
+        "厌氧罐检修必须严格执行动火作业许可(GB 30871-2022)",
+        "罐内作业前必须进行气体置换并检测可燃气体浓度",
+        "严禁违规分包，禁止作业人员携带火种",
+        "完善厌氧发酵工艺安全管理规程和应急预案"
+      ],
+      "remediation_actions": [
+        "3名死者均为分包队伍工人，事故认定为较大生产安全责任事故",
+        "杭州市环境集团被处罚金，多名责任人被追责",
+        "全市餐厨/厌氧处理项目开展安全大检查"
+      ],
+      "standards_violated": [
+        "GB 30871-2022 危险化学品企业特殊作业安全规范(动火、受限空间)",
+        "AQ 3021-2008 化学品生产单位受限空间作业安全规范",
+        "《安全生产法》第41条：违规分包",
+        "《特种作业人员安全技术培训考核管理规定》：作业人员无证上岗"
+      ],
+      "source_url": "https://safety.hangzhou.gov.cn/art/2020/10/16/art_1229205158_58921107.html",
+      "secondary_sources": [
+        "https://www.safehoo.com/Item/5689206.aspx"
+      ],
+      "tags": ["厌氧发酵", "沼气爆炸", "动火作业", "违规分包", "较大事故"]
+    },
+    {
+      "id": "INC-2018-08-29-Shenzhen",
+      "title": "深圳下坪固体废弃物填埋场'8·29'特大暴雨山体滑坡",
+      "date": "2018-08-29",
+      "location": {
+        "city": "深圳市",
+        "district": "罗湖区清水河",
+        "province": "广东省"
+      },
+      "incident_type": "landslide",
+      "casualties": {
+        "deaths": 0,
+        "missing": 0,
+        "injured": 0,
+        "economic_loss_yuan": null,
+        "threatened_population": "20余万"
+      },
+      "scale": {
+        "landslides_count": 32,
+        "weather": "50年一遇特大暴雨",
+        "emergency_response_level": "市级一级响应"
+      },
+      "root_cause_5why": [
+        "Why 1：50年一遇特大暴雨导致填埋区出现边坡滑坡和塌方32处，垃圾堆体出现整体滑移风险。",
+        "Why 2：下坪场长期超负荷运行，2500万吨垃圾堆体超高压，堆体稳定性已严重劣化。",
+        "Why 3：填埋场于1997年投运，原设计3500吨/天，高峰期10000吨/天以上，超过设计能力近3倍。",
+        "Why 4：原浆砌结构渗滤液调节池坝体存在溃坝风险，未及时实施扩容/加固。",
+        "Why 5：深圳垃圾处置'出口'难题长期未解决，下坪场被迫承担超期服役任务。"
+      ],
+      "lessons_learned": [
+        "垃圾填埋场严禁超设计能力运行",
+        "极端天气下堆体稳定性风险显著放大，须加强监测预警",
+        "调节池坝体须定期安全评估并及时加固",
+        "建立'政府主导、社会参与'的应急抢险机制"
+      ],
+      "remediation_actions": [
+        "启动市级一级应急响应，经过3天3夜连续奋战控制所有滑坡点",
+        "2018年5月下坪场列为抢险救灾工程，由中铁二局承担EPC总包",
+        "2020年8月生态修复项目基本完工，更名为'下坪环境园'",
+        "投资数十亿元实施堆体整形、防渗系统更新、调节池扩容"
+      ],
+      "standards_violated": [
+        "CJJ 17-2004 第6章：填埋场运行管理(超负荷)",
+        "GB 16889-2008 第12条：渗滤液收集处理",
+        "《深圳市生活垃圾处理设施运营管理办法》：运行监管要求"
+      ],
+      "source_url": "https://www.solidwaste.com.cn/news/173867.html",
+      "secondary_sources": [
+        "http://cregc5th.com/index.php?c=show&id=10794",
+        "https://szlqjt.com/info/5899.html"
+      ],
+      "tags": ["超期服役", "极端天气", "市级响应", "抢险救灾", "堆体失稳"]
+    },
+    {
+      "id": "INC-2009-02-16-Shenzhen",
+      "title": "深圳下坪固体废弃物填埋场'2·16'污泥坑管涌事件",
+      "date": "2009-02-16",
+      "location": {
+        "city": "深圳市",
+        "district": "罗湖区清水河",
+        "province": "广东省"
+      },
+      "incident_type": "structural_collapse",
+      "casualties": {
+        "deaths": 0,
+        "missing": 0,
+        "injured": 0,
+        "economic_loss_yuan": null
+      },
+      "scale": {
+        "spray_height_m": "7-8",
+        "location": "3号污泥坑"
+      },
+      "root_cause_5why": [
+        "Why 1：填埋坑内淤泥倒入过多，水头压力承受不住导致喷发，黑色淤泥喷涌掩埋污水处理场道路和施工工地。",
+        "Why 2：污泥固化设施直到2008年10月才投入使用，此前淤泥都直接倒入填埋坑。",
+        "Why 3：填埋场设计未预留污泥处置专区，原填埋坑被违规用作污泥暂存。",
+        "Why 4：污水处理厂污泥出路未妥善解决，被迫临时堆存。",
+        "Why 5：深圳污泥处置基础设施滞后于污水处理能力增长。"
+      ],
+      "lessons_learned": [
+        "污泥严禁直接倾倒入生活垃圾填埋坑",
+        "填埋场须配套污泥固化/独立处置设施",
+        "完善污水处理厂污泥规范化处置全链条"
+      ],
+      "remediation_actions": [
+        "立即开展3号污泥坑应急处置",
+        "加快建设污泥固化设施并投入使用(2008年10月)",
+        "推动全市污泥处置专项规划"
+      ],
+      "standards_violated": [
+        "CJJ 17-2004 第8章：填埋物入场要求(污泥须经稳定化预处理)",
+        "GB 16889-2008：入场废物控制要求",
+        "《城镇污水处理厂污泥处理处置技术规范》(CJJ 131)"
+      ],
+      "source_url": "https://www.solidwaste.com.cn/news/78313.html",
+      "secondary_sources": [],
+      "tags": ["管涌", "污泥违规入场", "基础设施滞后"]
+    },
+    {
+      "id": "INC-2022-06-04-Jiangxi",
+      "title": "江西抚州南城县生活垃圾填埋场'6·4'较大中毒和窒息事故",
+      "date": "2022-06-04",
+      "location": {
+        "city": "抚州市",
+        "district": "南城县万坊镇",
+        "province": "江西省"
+      },
+      "incident_type": "suffocation_poisoning",
+      "casualties": {
+        "deaths": 4,
+        "missing": 0,
+        "injured": 0,
+        "economic_loss_yuan": 4090000
+      },
+      "scale": {
+        "h2s_concentration_mg_m3": 171,
+        "h2s_exceed_times": "GB14554-93限值(0.06mg/m³)的2850倍",
+        "location": "库区外西南侧溢流池"
+      },
+      "root_cause_5why": [
+        "Why 1：2名临时工溢流池清淤作业时掉入排水井，因盲目施救导致另2名施救人员相继坠落，4人吸入硫化氢中毒死亡。",
+        "Why 2：填埋场防渗膜渗漏，硫化氢气体经地表水导排暗管扩散至溢流池；检测显示溢流池搅拌后H₂S浓度高达171mg/m³。",
+        "Why 3：作业人员无任何防护装备(防毒面具、呼吸器等)下池清淤，违反有限空间作业规程。",
+        "Why 4：填埋场未将溢流池作为有限空间管理，未进行气体检测和通风。",
+        "Why 5：填埋场运行管理粗放，安全培训不到位，隐患排查治理制度不健全。"
+      ],
+      "lessons_learned": [
+        "填埋场所有污水池/调节池/溢流池均应纳入有限空间管理",
+        "作业前必须进行气体检测(氧气、可燃气体、硫化氢)并强制通风",
+        "作业人员必须佩戴隔绝式呼吸防护用品",
+        "严禁盲目施救——先通风、再救人"
+      ],
+      "remediation_actions": [
+        "事故认定为较大生产安全责任事故",
+        "对填埋场开展全面隐患排查和防渗系统修复",
+        "完善气体监测预警系统",
+        "加强作业人员安全培训"
+      ],
+      "standards_violated": [
+        "GB 14554-93 恶臭污染物排放标准：H₂S排放严重超标",
+        "AQ 3021-2008 第5条：未进行气体检测和通风",
+        "CJJ 17-2018 第11章：填埋作业安全管理",
+        "GB 16889-2008 第12条：渗滤液收集处理设施防渗要求(防渗膜渗漏)",
+        "GBZ 2.1-2019 工业场所有害因素职业接触限值"
+      ],
+      "source_url": "https://www.solidwaste.com.cn/news/339687.html",
+      "secondary_sources": [
+        "https://www.safehoo.com/Item/5693415.aspx",
+        "https://www.163.com/dy/article/HM4VCTEP0539CFZW.html"
+      ],
+      "tags": ["硫化氢中毒", "盲目施救", "有限空间", "较大事故", "临时工"]
+    },
+    {
+      "id": "INC-2018-03-06-Yangjiang",
+      "title": "阳江市阳东区船尾石垃圾填埋场'3·6'死亡事故",
+      "date": "2018-03-06",
+      "location": {
+        "city": "阳江市",
+        "district": "阳东区",
+        "province": "广东省"
+      },
+      "incident_type": "suffocation_poisoning",
+      "casualties": {
+        "deaths": 1,
+        "missing": 0,
+        "injured": 0,
+        "economic_loss_yuan": 753686
+      },
+      "root_cause_5why": [
+        "Why 1：作业人员在污水/渗滤液处理设施内作业时吸入硫化氢中毒窒息。",
+        "Why 2：作业前未进行气体检测，未佩戴防毒面具等劳动防护用品。",
+        "Why 3：填埋场安全管理松懈，有限空间作业审批制度未落实。",
+        "Why 4：填埋场运行管理人员和作业人员均缺乏有限空间作业安全培训。",
+        "Why 5：地方环卫行业安全管理体系不健全，对小型填埋场监管不足。"
+      ],
+      "lessons_learned": [
+        "严格执行有限空间作业审批制度",
+        "作业前气体检测、通风、个人防护三要素缺一不可",
+        "加强基层环卫作业人员安全培训"
+      ],
+      "remediation_actions": [
+        "追究相关责任人员行政和刑事责任",
+        "对全市填埋场开展有限空间作业专项检查"
+      ],
+      "standards_violated": [
+        "AQ 3021-2008 第5条：气体检测和通风",
+        "GBZ 2.1-2019：硫化氢职业接触限值",
+        "CJJ 17-2018 第11章：填埋作业安全管理"
+      ],
+      "source_url": "http://www.yangdong.gov.cn/zdly/aqsc/content/post_21032.html",
+      "secondary_sources": [
+        "https://www.safehoo.com/Item/5710726.aspx"
+      ],
+      "tags": ["硫化氢", "有限空间", "劳动防护缺失"]
+    },
+    {
+      "id": "INC-2024-07-30-Molidawa",
+      "title": "莫旗尼尔基镇生活垃圾无害化处理场'7·30'一般淹溺事故",
+      "date": "2024-07-30",
+      "location": {
+        "city": "呼伦贝尔市",
+        "district": "莫力达瓦达斡尔族自治旗尼尔基镇",
+        "province": "内蒙古自治区"
+      },
+      "incident_type": "drowning",
+      "casualties": {
+        "deaths": 2,
+        "missing": 0,
+        "injured": 0,
+        "economic_loss_yuan": null
+      },
+      "root_cause_5why": [
+        "Why 1：2名作业人员在疏通渗滤液管道检查井施工作业时坠入检查井，溺水死亡。",
+        "Why 2：检查井未设置防护栏、安全盖板等防护设施，作业人员未佩戴安全带/安全绳。",
+        "Why 3：渗滤液管道疏通作业未编制专项施工方案，未进行安全交底。",
+        "Why 4：填埋场现场安全管理不到位，隐患排查治理不深入。",
+        "Why 5：小型填埋场安全管理基础薄弱，安全投入不足。"
+      ],
+      "lessons_learned": [
+        "检查井、调节池等构筑物必须设置防护栏、防坠网等防护设施",
+        "临边/临水作业必须佩戴安全带、安全绳",
+        "编制专项施工方案并严格安全交底"
+      ],
+      "remediation_actions": [
+        "事故认定为一般生产安全责任事故",
+        "对全县垃圾处理设施开展隐患排查",
+        "完善渗滤液处理设施安全防护"
+      ],
+      "standards_violated": [
+        "CJJ 17-2018 第11章：填埋作业安全管理",
+        "GB 50016-2014 建筑设计防火规范：检查井防护",
+        "《安全生产法》第41条：安全防护设施配备"
+      ],
+      "source_url": "https://www.mldw.gov.cn/upload_hlbe/download?siteId=9&id=811335",
+      "secondary_sources": [],
+      "tags": ["淹溺", "检查井", "防护缺失", "小型填埋场"]
+    },
+    {
+      "id": "INC-2021-01-03-Harbin",
+      "title": "哈尔滨京环环保资源'1·3'坍塌事故(填埋场坝体)",
+      "date": "2021-01-03",
+      "location": {
+        "city": "哈尔滨市",
+        "district": "松北/呼兰区",
+        "province": "黑龙江省"
+      },
+      "incident_type": "dam_failure",
+      "casualties": {
+        "deaths": 0,
+        "missing": 0,
+        "injured": 0,
+        "economic_loss_yuan": 296639.68
+      },
+      "scale": {
+        "weather_temp_c": "-17 to -20",
+        "event_chain": "坍塌事故 → 次生突发环境事件(渗滤液外泄)"
+      },
+      "root_cause_5why": [
+        "Why 1：填埋区内垃圾渗滤液液面超出坝体防渗层，导致垃圾填埋场坝体坍塌，渗滤液外泄。",
+        "Why 2：公司垃圾渗滤液处理能力严重不足，超能力接收固体垃圾。",
+        "Why 3：公司未设置渗滤液液面监测系统，安全管理和隐患排查不到位。",
+        "Why 4：管理人员和作业人员安全意识不强，市城市管理局安全生产监管责任落实不到位。",
+        "Why 5：填埋场超规模、超期服役，地方政府未及时启动替代处置方案。"
+      ],
+      "lessons_learned": [
+        "填埋场必须设置渗滤液液面监测和报警系统",
+        "严格按设计能力接收垃圾，杜绝超规模运行",
+        "低温条件下渗滤液结冰/冻胀可能加剧坝体失稳",
+        "次生环境事件须与主事故同步调查处置"
+      ],
+      "remediation_actions": [
+        "2021年11月底填埋区停用(累计接收约230万吨垃圾)",
+        "同期焚烧项目点火成功进入试运行",
+        "建设12万立方米渗滤液应急暂存池",
+        "黑龙江省生态环境厅发预警，处理积存2万余吨渗滤液"
+      ],
+      "standards_violated": [
+        "GB 16889-2008 第12条：渗滤液收集处理能力不足",
+        "CJJ 17-2018 第12章：填埋场运行管理(超规模)",
+        "CJJ 113-2007 第4章：防渗系统工程(防渗层失效)",
+        "《环境保护法》第42条：环境风险防范"
+      ],
+      "source_url": "https://www.harbin.gov.cn/haerbin/c107903/202111/c01_128300.shtml",
+      "secondary_sources": [
+        "https://www.safehoo.com/Item/5714620.aspx",
+        "https://hlj.gov.cn/hlj/c108433/202308/c00_31658906.shtml"
+      ],
+      "tags": ["坝体坍塌", "渗滤液外泄", "次生环境事件", "超规模运行", "低温"]
+    },
+    {
+      "id": "INC-2018-02-20-Beijing",
+      "title": "北京大兴区安定垃圾填埋场'2·20'一般生产安全事故",
+      "date": "2018-02-20",
+      "location": {
+        "city": "北京市",
+        "district": "大兴区",
+        "province": "北京市"
+      },
+      "incident_type": "structural_collapse",
+      "casualties": {
+        "deaths": 1,
+        "missing": 0,
+        "injured": 0,
+        "economic_loss_yuan": null
+      },
+      "root_cause_5why": [
+        "Why 1：1名工人在垃圾捡拾清洁作业中因物体打击死亡(安全钩断裂)。",
+        "Why 2：作业人员所用安全防护设备(安全钩)质量不合格或维护不到位。",
+        "Why 3：作业前未对劳动防护用品进行有效性检查。",
+        "Why 4：现场安全管理松懈，作业人员安全意识不强。",
+        "Why 5：垃圾填埋场作业环境复杂，对劳动防护用品的质量和定期检验要求高。"
+      ],
+      "lessons_learned": [
+        "劳动防护用品须定期检验、更换",
+        "作业前进行安全设备检查",
+        "加强作业人员安全培训"
+      ],
+      "remediation_actions": [
+        "追究相关责任人员责任",
+        "对全市环卫作业开展劳动防护专项检查"
+      ],
+      "standards_violated": [
+        "GB 6095-2009 安全带",
+        "《安全生产法》第42条：劳动防护用品管理",
+        "CJJ 17-2018 第11章：作业安全管理"
+      ],
+      "source_url": "https://www.bjdx.gov.cn/bjsdxqrmzf/zwfw/zdly/aqscjg/690993/index.html",
+      "secondary_sources": [],
+      "tags": ["物体打击", "劳动防护", "安全钩断裂"]
+    },
+    {
+      "id": "INC-2019-09-07-Nanning",
+      "title": "南宁兴宁区平里静脉产业园垃圾填埋场'9·07'触电事故",
+      "date": "2019-09-07",
+      "location": {
+        "city": "南宁市",
+        "district": "兴宁区",
+        "province": "广西壮族自治区"
+      },
+      "incident_type": "electrocution",
+      "casualties": {
+        "deaths": 1,
+        "missing": 0,
+        "injured": 0,
+        "economic_loss_yuan": null
+      },
+      "root_cause_5why": [
+        "Why 1：作业人员在填埋场作业中接触带电体或漏电设备导致触电死亡。",
+        "Why 2：作业现场临时用电不规范或电气设备漏电保护失效。",
+        "Why 3：填埋场潮湿环境加剧电气安全风险，未采取针对性防护。",
+        "Why 4：现场用电安全检查不到位，作业人员未穿戴绝缘防护用品。",
+        "Why 5：小型填埋场对电气安全管理重视不足。"
+      ],
+      "lessons_learned": [
+        "填埋场潮湿环境电气安全须特别重视",
+        "临时用电严格执行TN-S系统和漏电保护",
+        "作业人员佩戴绝缘防护用品"
+      ],
+      "remediation_actions": [
+        "追究相关责任人员责任",
+        "开展全市填埋场电气安全专项检查"
+      ],
+      "standards_violated": [
+        "GB 50054-2011 低压配电设计规范",
+        "JGJ 46-2005 施工现场临时用电安全技术规范",
+        "CJJ 17-2018 第11章：作业安全管理"
+      ],
+      "source_url": "http://www.nnxn.gov.cn/xxgk/zcwj/zfwj/t4477843.html",
+      "secondary_sources": [],
+      "tags": ["触电", "临时用电", "潮湿环境"]
+    },
+    {
+      "id": "INC-2014-Beijing-Asuwei",
+      "title": "北京阿苏卫垃圾填埋场渗滤液偷排及长期地下水污染事件",
+      "date": "2014-09-07",
+      "location": {
+        "city": "北京市",
+        "district": "昌平区",
+        "province": "北京市"
+      },
+      "incident_type": "leachate_leak",
+      "casualties": {
+        "deaths": 0,
+        "missing": 0,
+        "injured": 0,
+        "economic_loss_yuan": null
+      },
+      "scale": {
+        "leachate_volume": "大量渗滤液",
+        "groundwater_affected_area_km2": 20,
+        "design_capacity_tpd": 1200,
+        "actual_capacity_tpd": "3500-3800",
+        "overload_ratio": "180%-217%"
+      },
+      "root_cause_5why": [
+        "Why 1：阿苏卫清洁四场向北小河污水处理厂市政管道偷排大量渗滤液，导致北小河发黑恶臭；填埋场下方30米以下地下水被污染。",
+        "Why 2：填埋场原防渗系统设计标准低(1994年投运)，长期运行后防渗层失效，渗滤液持续下渗污染地下水。",
+        "Why 3：填埋场超负荷运行(实际3500-3800吨/天 vs 设计1200吨/天)，渗滤液产生量远超处理能力。",
+        "Why 4：地方政府监管不到位，运营方为降低处理成本选择偷排。",
+        "Why 5：早期填埋场设计标准、监管机制与城市发展规模不匹配的历史遗留问题。"
+      ],
+      "lessons_learned": [
+        "早期填埋场须实施封场或升级改造",
+        "严禁超设计能力运行，杜绝偷排",
+        "建立常态化地下水监测井网和信息公开机制",
+        "周边居民健康风险评估须作为重要决策依据"
+      ],
+      "remediation_actions": [
+        "媒体曝光后北京市水务局和朝阳区环保局介入调查",
+        "认定阿苏卫清洁四场违规排放证据确凿",
+        "周边村庄开展健康体检和环境监测",
+        "阿苏卫垃圾焚烧厂建设纳入议程(后因居民反对搁置)"
+      ],
+      "standards_violated": [
+        "GB 16889-1997(原版)：渗滤液控制要求",
+        "《水污染防治法》(2008修订)：禁止偷排",
+        "《地下水管理条例》：地下水污染防治",
+        "CJJ 17-2001(原版)：填埋场运行管理"
+      ],
+      "source_url": "http://dianda.cqvip.com/Qikan/Article/Detail?id=35385365",
+      "secondary_sources": [
+        "https://finance.sina.com.cn/review/observe/20050130/12161333538.shtml",
+        "https://digitalpaper.stdaily.com/http_www.kjrb.com/kjwzb/html/2013-05/23/content_207251.htm"
+      ],
+      "tags": ["偷排", "地下水污染", "早期填埋场", "超负荷", "健康影响"]
+    },
+    {
+      "id": "INC-2021-07-Guizhou",
+      "title": "贵州西秀区城市生活垃圾填埋场渗滤液泄漏与地下水超标事件",
+      "date": "2021-07-23",
+      "location": {
+        "city": "安顺市",
+        "district": "西秀区",
+        "province": "贵州省"
+      },
+      "incident_type": "leachate_leak",
+      "casualties": {
+        "deaths": 0,
+        "missing": 0,
+        "injured": 0,
+        "economic_loss_yuan": null
+      },
+      "scale": {
+        "regulator": "中央第二轮第四批生态环境保护督察",
+        "duration": "地下水长期超标",
+        "dam_failure_count": 2
+      },
+      "root_cause_5why": [
+        "Why 1：垃圾填埋场发生两次调节池/收集池坝体溃决，渗滤液大量泄漏，污染地下水长期超标。",
+        "Why 2：渗滤液收集处理能力不足，调节池长期超水位运行。",
+        "Why 3：填埋场防渗衬层老化或破损，未及时修复。",
+        "Why 4：运营单位环境风险隐患排查治理不深入，未按规范开展地下水监测。",
+        "Why 5：地方政府对填埋场环境监管不到位，未督促运营方及时整改。"
+      ],
+      "lessons_learned": [
+        "调节池水位须严格管控，杜绝漫顶溃坝",
+        "防渗衬层须定期检测评估并及时修复",
+        "地下水监测井须按规范建设、定期监测并信息公开",
+        "中央生态环境保护督察是环境风险隐患排查的重要推动力"
+      ],
+      "remediation_actions": [
+        "中央督察组通报典型案例",
+        "立即停止使用3#调节池及收集池",
+        "渗滤液转运至填埋场渗滤液处理站规范处置",
+        "启动地下水超标区域修复"
+      ],
+      "standards_violated": [
+        "GB 16889-2008 第12条：渗滤液收集处理",
+        "CJJ 17-2018 第12章：填埋场运行管理",
+        "CJJ 113-2007 第4章：防渗系统工程",
+        "《水污染防治法》(2017修订)第80条：地下水监测井建设",
+        "《地下水管理条例》：地下水污染防治"
+      ],
+      "source_url": "https://sthj.guizhou.gov.cn/ztzl/zyhbdcgzzgjxs/pgt/202107/t20210723_69235779.html",
+      "secondary_sources": [
+        "http://sthjj.guizhou.gov.cn/gzshbj/jczx/202412/t20241211_86400320.html"
+      ],
+      "tags": ["中央督察", "调节池溃坝", "地下水超标", "防渗层失效"]
+    },
+    {
+      "id": "INC-2021-05-26-Jiangmen",
+      "title": "江门江海区礼乐街道'5·26'较大中毒事故(污水管网相关填埋场辅助设施)",
+      "date": "2021-05-26",
+      "location": {
+        "city": "江门市",
+        "district": "江海区礼乐街道五四村",
+        "province": "广东省"
+      },
+      "incident_type": "suffocation_poisoning",
+      "casualties": {
+        "deaths": 4,
+        "missing": 0,
+        "injured": 2,
+        "economic_loss_yuan": 7230000
+      },
+      "scale": {
+        "project": "江海区礼乐街道农村生活污水治理项目A46#井",
+        "incident_duration_hours": "约4小时",
+        "rescue_status": "盲目施救导致伤亡扩大"
+      },
+      "root_cause_5why": [
+        "Why 1：6人下井清淤作业时吸入高浓度硫化氢中毒溺水，4人死亡2人受伤。",
+        "Why 2：A46#井上游管道因施工已封闭至少半年，含硫化物生活污水厌氧发酵产生大量H₂S。事发前气象条件(气温气压)有利于废气逸出。",
+        "Why 3：作业人员未通风、未检测、未做防护进入井下作业；救援人员未做好个人防护盲目施救。",
+        "Why 4：项目施工方未编制有限空间作业专项方案，未进行安全交底和培训。",
+        "Why 5：农村污水治理项目安全管理基础薄弱，行业监管存在盲区。"
+      ],
+      "lessons_learned": [
+        "有限空间作业严格执行'先通风、再检测、后进入'原则",
+        "严禁盲目施救——救援人员必须配备专业防护装备",
+        "长期封闭管道/井内气体风险极高，须强制置换通风",
+        "农村小型环保设施安全管理不容忽视"
+      ],
+      "remediation_actions": [
+        "4名死者免于追究责任；4人移送司法机关；11人给予党纪政务处分",
+        "江门市政府发布防范和整改措施落实情况评估报告",
+        "全市开展有限空间作业专项治理"
+      ],
+      "standards_violated": [
+        "AQ 3021-2008 第5条：气体检测和通风",
+        "GBZ 2.1-2019：H₂S职业接触限值(10mg/m³ MAC)",
+        "《安全生产法》第41条：有限空间作业安全管理",
+        "GB 14554-93 恶臭污染物排放标准"
+      ],
+      "source_url": "https://www.jiangmen.gov.cn/jmyjj/attachment/0/248/248451/2723161.pdf",
+      "secondary_sources": [
+        "https://www.xinhuanet.com/2021-05/27/c_1127498010.htm",
+        "https://china.caixin.com/m/2021-05-27/101718716.html"
+      ],
+      "tags": ["清淤作业", "硫化氢", "盲目施救", "较大事故", "农村污水"]
+    },
+    {
+      "id": "INC-2021-08-01-Puer",
+      "title": "云南普洱思茅区莲花片区垃圾填埋场中毒事故",
+      "date": "2021-08-01",
+      "location": {
+        "city": "普洱市",
+        "district": "思茅区",
+        "province": "云南省"
+      },
+      "incident_type": "suffocation_poisoning",
+      "casualties": {
+        "deaths": 5,
+        "missing": 0,
+        "injured": 1,
+        "economic_loss_yuan": null
+      },
+      "root_cause_5why": [
+        "Why 1：作业人员在垃圾填埋场作业时因有毒气体(疑似硫化氢/沼气混合)中毒。",
+        "Why 2：作业前未进行气体检测和通风，作业人员未佩戴防毒面具等防护装备。",
+        "Why 3：填埋场安全管理不到位，有限空间作业审批制度缺失。",
+        "Why 4：作业人员安全培训不足，违规作业。",
+        "Why 5：地方小型填埋场安全监管薄弱，行业安全管理体系不健全。"
+      ],
+      "lessons_learned": [
+        "有限空间作业必须先通风、检测、后作业",
+        "高风险作业时段(如夜间、暴雨后)须提高警惕",
+        "完善基层环卫作业人员安全培训与监管"
+      ],
+      "remediation_actions": [
+        "事故调查后追究相关责任",
+        "普洱市开展垃圾处理设施安全隐患排查"
+      ],
+      "standards_violated": [
+        "AQ 3021-2008 第5条：气体检测和通风",
+        "GBZ 2.1-2019：H₂S/CH₄职业接触限值",
+        "CJJ 17-2018 第11章：作业安全管理",
+        "《安全生产法》第41条"
+      ],
+      "source_url": "https://www.solidwaste.com.cn/news/339687.html",
+      "secondary_sources": [
+        "https://www.cn-hw.net/article/detail/741697169928486913"
+      ],
+      "tags": ["硫化氢", "中毒", "小型填埋场", "群死"]
+    }
+  ],
+  "statistical_summary": {
+    "total_incidents": 15,
+    "by_type": {
+      "suffocation_poisoning": 5,
+      "landslide": 2,
+      "structural_collapse": 2,
+      "leachate_leak": 2,
+      "gas_explosion": 1,
+      "dam_failure": 1,
+      "drowning": 1,
+      "electrocution": 1
+    },
+    "total_deaths": 95,
+    "total_economic_loss_yuan": "约 8.52 亿元(含深圳12·20重大事故8.12亿元)",
+    "by_year": {
+      "2009": 1,
+      "2014": 1,
+      "2015": 1,
+      "2018": 3,
+      "2019": 1,
+      "2020": 2,
+      "2021": 4,
+      "2022": 1,
+      "2024": 1
+    },
+    "by_province": {
+      "广东省": 4,
+      "北京市": 2,
+      "浙江省": 2,
+      "江西省": 1,
+      "黑龙江省": 1,
+      "内蒙古自治区": 1,
+      "广西壮族自治区": 1,
+      "贵州省": 1,
+      "云南省": 1
+    },
+    "key_patterns": [
+      "有限空间作业(清淤、疏通、掀膜)是死亡事故第一风险源",
+      "硫化氢(H₂S)是致死最主要的有毒气体(占中毒事故58%)",
+      "盲目施救导致伤亡扩大(占中毒事故42.5%)",
+      "超设计能力运行普遍，是堆体失稳/坝体溃决的共性诱因",
+      "防渗衬层老化/失效是地下水污染的长期隐患",
+      "违规分包、临时工培训缺失是基层事故主因",
+      "动火作业+厌氧发酵罐是爆炸事故典型场景"
+    ]
+  },
+  "usage_notes": {
+    "few_shot_prompting": "使用 incidents 数组中的 incident_type 字段筛选场景；root_cause_5why 适合作为'风险推理链'示例；lessons_learned 和 standards_violated 适合作为'整改建议'示例。",
+    "risk_scenario_generation": "按 incident_type 维度生成场景模板，每类至少 2-3 个样本以保证多样性。",
+    "citation": "使用本数据集时建议引用具体事故 ID(INC-YYYY-MM-DD-City)以确保可追溯性。"
+  }
+}

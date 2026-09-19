@@ -1,0 +1,589 @@
+{
+  "$schema": "knowledge-base/standards-summary/v1",
+  "domain": "中国生活垃圾填埋场环境监测",
+  "compiled_at": "2026-08-22",
+  "scope": "10 standards (GB/CJJ/HJ/AQ) covering landfill pollution control, sanitary landfill engineering, contaminated site investigation/monitoring, soil/groundwater quality, pollutant discharge permits, gas detection, and urban construction archives.",
+  "notes": {
+    "HJ_1139_2020_clarification": "用户查询中的 HJ 1139-2020 在生态环境部排污许可证技术规范体系中并不存在。覆盖生活垃圾填埋场的现行有效标准为 HJ 1106-2020《排污许可证申请与核发技术规范 环境卫生管理业》。本文件以 HJ 1106-2020 收录并显式标注此说明。",
+    "HJ_25_6_2012_clarification": "用户列出的 HJ 25.6-2012 在 HJ 25 系列中并未颁布过 2012 版；现行有效版本为 HJ 25.6-2019《污染地块地下水修复和风险管控技术导则》（2019-06-18 发布并实施）。本文件以 HJ 25.6-2019 收录并显式标注此说明。",
+    "HJ_25_1_replacement": "HJ 25.1-2014 已于 2019-12-05 被 HJ 25.1-2019《建设用地土壤污染状况调查技术导则》替代。本文件保留 2014 版要点，同时标注替代关系。",
+    "HJ_25_2_replacement": "HJ 25.2-2014 已于 2019-12-05 被 HJ 25.2-2019《建设用地土壤污染风险管控和修复监测技术导则》替代。本文件保留 2014 版要点，同时标注替代关系。",
+    "GB_16889_replacement": "GB 16889-2008 已被 GB 16889-2024《生活垃圾填埋场污染控制标准》替代（2024 发布实施）。本文件保留 2008 版关键阈值。",
+    "CJJ_176_abolition": "CJJ 176-2012 已于 2025-09-01 废止，替代标准情况需关注住建部后续公告。本文件保留 2012 版关键 Fs 阈值。",
+    "CJJ_17_nature": "CJJ 17-2004 实为 CJJ/T 17-2004（推荐性行业标准）。该标准与填埋场监测无直接技术耦合，本文件仅作归档管理参考。",
+    "AQ_4202_year": "现行可作业场所气体检测报警仪技术规范为 AQ 4202-2008（注：亦有 AQ 4202-2009 废止历史，需以官方公告为准；甲烷报警阈值 LEL=5%VOL 为统一口径）。"
+  },
+  "standards": [
+    {
+      "code": "GB 16889-2008",
+      "name_cn": "生活垃圾填埋场污染控制标准",
+      "name_en": "Standard for pollution control on the landfill site of municipal solid waste",
+      "year": 2008,
+      "status": "已被 GB 16889-2024 替代",
+      "issuing_body": "国家环境保护部、国家质量监督检验检疫总局",
+      "effective_date": "2008-07-01",
+      "scope": "生活垃圾填埋场选址、设计与施工、填埋作业、封场、渗滤液收集与处理、恶臭控制、甲烷排放控制、地下水与地表水污染控制、土壤污染控制、污染物排放控制、环境监测。",
+      "key_thresholds": {
+        "leachate_conventional_pollutants_mg_L": {
+          "pH": "6~9",
+          "CODcr": 100,
+          "BOD5": 30,
+          "SS": 30,
+          "TN_N": 40,
+          "NH3_N": 25,
+          "TP_P": 3,
+          "fecal_coliform_per_L": 10000,
+          "total_Hg": 0.01,
+          "total_Cd": 0.1,
+          "total_Cr": 1.5,
+          "Cr6+": 0.5,
+          "total_As": 0.3,
+          "total_Pb": 1.0,
+          "total_Ni": 1.0,
+          "total_Be": 0.005,
+          "total_Ag": 0.5,
+          "total_Cu": 2.0,
+          "total_Zn": 5.0,
+          "total_Mn": 2.0,
+          "total_Se": 1.0,
+          "total_Ba": 2.0,
+          "fluoride": 10,
+          "chloride": 400,
+          "sulfide": 1.0,
+          "cyanide": 0.5,
+          "volatile_phenol": 0.5,
+          "benzo_a_pyrene": 0.00003
+        },
+        "treatment_efficiency_minimum": {
+          "CODcr": ">= 60%",
+          "BOD5": ">= 50%",
+          "SS": ">= 50%",
+          "NH3_N": ">= 50%",
+          "TN": ">= 50%"
+        },
+        "compliance_dates": {
+          "new_landfill": "2008-07-01",
+          "existing_landfill": "2011-07-01"
+        },
+        "odor_fence_line_limits_mg_m3": {
+          "NH3": 1.0,
+          "H2S": 0.03,
+          "methyl_mercaptan": 0.004,
+          "odor_concentration_dimensionless": 10
+        },
+        "methane_control": {
+          "leachate_CH4_pct_volume_in_collection_system": "< 5%（库区及气体收集系统甲烷体积分数不应大于 5%）",
+          "active_collection_required": true
+        },
+        "site_selection_distance_m": {
+          "residential_housing": ">= 500",
+          "drinking_water_source_protection_zone": "禁止选址"
+        }
+      },
+      "key_clauses_relevant_to_landfill_monitoring": {
+        "slope_stability": "未直接规定 Fs；结构与稳定要求由 CJJ 176 系列约束。",
+        "leachate": "第 9 章规定渗滤液产生、收集、处理与排放限值；处理设施去除效率需满足上表。",
+        "gas": "第 10 章甲烷排放控制，库区及收集系统 CH4 体积分数 ≤ 5%，必须设置主动导排和处理系统；第 11 章恶臭污染物厂界浓度限值。",
+        "groundwater": "第 12 章地下水及地表水污染控制；填埋场需建立地下水监测系统，本底井（对照井）、污染扩散井、污染监测井三类。",
+        "soil": "第 13 章土壤污染控制；与 GB 36600-2018 配套使用。",
+        "monitoring": "第 14 章环境监测要求；渗滤液总排放口安装 COD、NH3-N、流量自动监测设备。"
+      },
+      "source_urls": [
+        "https://openstd.samr.gov.cn/",
+        "https://www.mee.gov.cn/"
+      ]
+    },
+    {
+      "code": "CJJ 176-2012",
+      "name_cn": "生活垃圾卫生填埋场岩土工程技术规范",
+      "name_en": "Technical code for geotechnical engineering of municipal solid waste sanitary landfill",
+      "year": 2012,
+      "status": "已于 2025-09-01 废止",
+      "issuing_body": "中华人民共和国住房和城乡建设部",
+      "effective_date": "2012-06-01",
+      "announcement_no": "第 1243 号",
+      "mandatory_clauses": ["6.4.1", "6.5.5"],
+      "scope": "新建、扩建、改建及已建生活垃圾卫生填埋场的岩土工程设计、施工与监测。",
+      "key_thresholds": {
+        "slope_stability_safety_factor_Fs": {
+          "normal_operating": "Fs >= 1.30",
+          "seismic": "Fs >= 1.15（表6.1.4 一级；二级1.10/三级1.05）"
+        },
+        "leachate_drainage_layer_thickness_mm": {
+          "annual_rainfall_gt_800mm": ">= 500",
+          "annual_rainfall_le_800mm": ">= 300"
+        },
+        "leachate_head_on_liner_m": {
+          "max_water_head": "<= 0.30（30 cm）"
+        },
+        "drainage_material_spec": {
+          "particle_size_mm": "20~60（卵石/砾石）",
+          "initial_hydraulic_conductivity_m_per_s": ">= 1e-3"
+        },
+        "intermediate_leachate_blind_drain": {
+          "vertical_spacing_m": "10~15",
+          "horizontal_spacing_m": "50~60",
+          "section_min_m": "1 x 1"
+        },
+        "leachate_pumping_well": {
+          "spacing_m": "<= 2 x influence_radius",
+          "diameter_mm": "800~1000"
+        },
+        "surface_horizontal_displacement_monitoring": {
+          "grid_spacing_m": "30~60",
+          "warning_velocity_mm_per_day": "> 10（连续 2 天触发警戒）"
+        }
+      },
+      "key_clauses_relevant_to_landfill_monitoring": {
+        "slope_stability": "第 6 章填埋场稳定，规定 Fs >= 1.30（运行期）、地震工况按表6.1.4 分档：一级 >= 1.15（二级 1.10 / 三级 1.05）。",
+        "leachate": "第 4 章填埋场渗流及渗沥液水位控制；导排层厚度、水头、材料粒径及渗透系数；中间盲沟与抽排竖井设计参数。",
+        "gas": "4.6 节填埋气收集及控制措施；与 CJJ 133-2019 配套使用。",
+        "groundwater": "第 9 章填埋场岩土工程安全监测：9.2 渗沥液水位监测（水位管+剖面沉降仪+水位计联合测定）；9.3 表面水平位移；9.4 深层水平位移（测斜管+测斜仪）；9.5 堆体沉降监测；9.6 填埋气压监测。"
+      },
+      "source_urls": [
+        "https://www.mohurd.gov.cn/gongkai/zc/wjk/art/2012/art_17339_208861.html",
+        "https://ebook.chinabuilding.com.cn/zbooklib/book/detail/show?bookID=58419&SiteID=1"
+      ]
+    },
+    {
+      "code": "HJ 25.1-2014",
+      "name_cn": "场地环境调查技术导则",
+      "name_en": "Technical guideline for site environmental investigation",
+      "year": 2014,
+      "status": "已被 HJ 25.1-2019《建设用地土壤污染状况调查技术导则》替代（2019-12-05 实施）",
+      "issuing_body": "中华人民共和国环境保护部",
+      "effective_date": "2014-12-01",
+      "scope": "潜在污染场地和污染场地的环境调查，包括土壤和地下水。",
+      "key_thresholds": {
+        "phases": {
+          "phase_1_pollution_identification": "资料收集分析、人员访谈与现场踏勘，原则上不现场采样",
+          "phase_2_pollution_confirmation": "初步采样分析 + 详细采样分析",
+          "phase_3_supplementary_investigation": "特征参数调查与补充取样"
+        },
+        "sampling_patterns": {
+          "systematic_random": "污染分布均匀的场地",
+          "professional_judgment": "潜在污染明确",
+          "zoned": "污染分布不均匀且已掌握分布",
+          "systematic_grid": "污染分布不明或范围大的场地"
+        },
+        "soil_sampling_depth_default_m": "0.5 m 等间距（信息不足时）",
+        "soil_sampling_depth_refined": {
+          "0_to_0.5m": "0.5 m 表层必采",
+          "0.5m_to_6m": "间隔 <= 2 m",
+          "below_6m": "间隔 <= 2 m"
+        },
+        "groundwater_monitoring_well_layout": "应考虑地下水流向、水力坡降、含水层渗透性、埋深和厚度；场地内或临近现有监测井可作取样点/对照点",
+        "typical_grid_m": "40 x 40（重点区域加密至 20 x 20）"
+      },
+      "key_clauses_relevant_to_landfill_monitoring": {
+        "slope_stability": "不适用",
+        "leachate": "不直接适用；但为疑似污染地块（含历史填埋场）启动调查的依据。",
+        "gas": "不直接适用；可在调查阶段识别挥发性有机物迁移。",
+        "groundwater": "明确地下水采样点应考虑流向、坡降、含水层性质；要求设置对照点。",
+        "monitoring": "三阶段调查方法；规定 QA/QC（运输空白、现场重复、清洗空白等）。"
+      },
+      "source_urls": [
+        "https://big5.mee.gov.cn/gate/big5/www.mee.gov.cn/gkml/hbb/bgg/201402/t20140224_268193.htm",
+        "https://www.mee.gov.cn/xxgk2018/xxgk/xxgk06/201811/W020181126368774409630.pdf"
+      ]
+    },
+    {
+      "code": "HJ 25.2-2014",
+      "name_cn": "场地环境监测技术导则",
+      "name_en": "Technical guideline for site environmental monitoring",
+      "year": 2014,
+      "status": "已被 HJ 25.2-2019《建设用地土壤污染风险管控和修复监测技术导则》替代（2019-12-05 实施）",
+      "issuing_body": "中华人民共和国环境保护部",
+      "effective_date": "2014-12-01",
+      "scope": "污染场地土壤和地下水监测点位的布设、样品采集、保存、运输及监测井建设。",
+      "key_thresholds": {
+        "monitoring_well_depth": "依据监测目的、含水层类型、埋深和相对厚度确定；不应穿透浅层地下水底板；目标含水层与其他含水层之间需有效止水",
+        "sampling_depth_below_water_surface_m": ">= 0.5",
+        "LNAPL_monitoring_screen_position": "含水层顶部",
+        "DNAPL_monitoring_screen_position": "含水层底部及隔水层顶部",
+        "well_construction": {
+          "casing_above_ground_m": 0.3,
+          "screen_length_match_aquifer": true,
+          "common_pipe_material": "PVC",
+          "common_diameter_mm": 75
+        },
+        "well_development_HJ164_2020_ref": {
+          "wait_period_after_completion_hours": ">= 8",
+          "extraction_volumes": ">= 3 倍井体积",
+          "acceptable_equipment": "潜水泵、贝勒管、惯性泵（禁用气举/反冲）",
+          "turbidity_acceptance_NTU": "<= 10",
+          "constant_rate_pumping_test_hours": ">= 24"
+        }
+      },
+      "key_clauses_relevant_to_landfill_monitoring": {
+        "slope_stability": "不适用",
+        "leachate": "为填埋场封场后土壤/地下水监测提供井位与采样规范。",
+        "gas": "不直接适用；可结合 HJ 1019 等土壤气监测要求。",
+        "groundwater": "监测井建设（井管、筛管、滤料、井头、止水）、成井后洗井、采样前的抽水试验等全过程要求。",
+        "monitoring": "样品采集、运输、保存；QA/QC 同 HJ 25.1。"
+      },
+      "source_urls": [
+        "https://www.mee.gov.cn/ywgz/fgbz/bz/bzwb/trhj/201912/t20191224_749891.shtml",
+        "https://big5.mee.gov.cn/gate/big5/www.mee.gov.cn/ywgz/fgbz/bz/bzwb/trhj/201912/t20191224_749891.shtml"
+      ]
+    },
+    {
+      "code": "HJ 25.6-2019",
+      "name_cn": "污染地块地下水修复和风险管控技术导则",
+      "name_en": "Technical guideline for groundwater remediation and risk control of contaminated sites",
+      "year": 2019,
+      "status": "现行有效（用户列出 HJ 25.6-2012 不存在，本文件以 2019 版收录并显式说明）",
+      "issuing_body": "中华人民共和国生态环境部",
+      "effective_date": "2019-06-18",
+      "scope": "污染地块地下水修复和风险管控的方案编制、工程设计、施工、运行和监测。",
+      "key_thresholds": {
+        "remediation_monitoring_wells": {
+          "background_well_min": ">= 1（污染羽上游对照点）",
+          "internal_well_min": ">= 3~4（按三角形或四边形布设）",
+          "control_well_min": ">= 4（污染羽上、下游及垂直于径流方向的两侧）"
+        },
+        "monitoring_grid_density_m": {
+          "default_max": "80 x 80",
+          "DNAPL_or_high_concentration_max": "40 x 40"
+        },
+        "stratified_monitoring_aquifer_threshold_m": "当含水层厚度 > 6 m 时应分层采样",
+        "LNAPL_screen_position": "含水层顶部",
+        "DNAPL_screen_position": "含水层底部及隔水层顶部",
+        "monitoring_indicators": [
+          "地下水位",
+          "目标污染物浓度",
+          "注入药剂特征指标（pH、温度、电导率、总硬度、ORP、DO）",
+          "工程性能指标（取决于控制措施）",
+          "二次污染物"
+        ]
+      },
+      "key_clauses_relevant_to_landfill_monitoring": {
+        "slope_stability": "不适用",
+        "leachate": "适用于填埋场封场后修复/风险管控阶段的渗滤液污染羽刻画与监测井布设。",
+        "gas": "不直接适用",
+        "groundwater": "9.2.1 修复监测井布设；9.2.2 风险管控监测井布设；含水层 > 6 m 分层；网格密度；LNAPL/DNAPL 筛管位置。",
+        "monitoring": "9.2.1.2 监测指标体系完整列表。"
+      },
+      "source_urls": [
+        "https://www.mee.gov.cn/xxgk2018/xxgk/xxgk01/201906/t20190621_707284.html",
+        "https://www.h2o-china.com/policy/6242.html",
+        "https://sthjt.hunan.gov.cn/sthjt/xxgk/kjbz/shj/202105/t20210513_16546917.html"
+      ]
+    },
+    {
+      "code": "GB 36600-2018",
+      "name_cn": "土壤环境质量 建设用地土壤污染风险管控标准（试行）",
+      "name_en": "Soil environmental quality — Risk control standard for soil contamination of development land",
+      "year": 2018,
+      "status": "现行有效（试行）",
+      "issuing_body": "生态环境部、国家市场监督管理总局",
+      "effective_date": "2018-08-01",
+      "scope": "建设用地土壤污染风险筛查和风险管制；不适用于农用地；不适用于放射性、致病性污染物。",
+      "key_thresholds_mg_kg": {
+        "heavy_metals_inorganics": {
+          "As": {"type1_screen": 20, "type1_control": 120, "type2_screen": 60, "type2_control": 140, "note": "①=检测值高于筛选值但不超过背景值时不纳入污染地块管理"},
+          "Cd": {"type1_screen": 20, "type1_control": 47, "type2_screen": 65, "type2_control": 172},
+          "Cr6+": {"type1_screen": 3.0, "type1_control": 30, "type2_screen": 5.7, "type2_control": 78},
+          "Cu": {"type1_screen": 2000, "type1_control": 8000, "type2_screen": 18000, "type2_control": 36000},
+          "Pb": {"type1_screen": 400, "type1_control": 800, "type2_screen": 800, "type2_control": 2500},
+          "Hg": {"type1_screen": 8, "type1_control": 33, "type2_screen": 38, "type2_control": 82},
+          "Ni": {"type1_screen": 150, "type1_control": 600, "type2_screen": 900, "type2_control": 2000}
+        },
+        "selected_VOCs_mg_kg": {
+          "benzene": {"type1_screen": 1, "type1_control": 10, "type2_screen": 4, "type2_control": 40},
+          "trichloroethylene": {"type1_screen": 0.7, "type1_control": 7, "type2_screen": 2.8, "type2_control": 20},
+          "tetrachloroethylene": {"type1_screen": 11, "type1_control": 34, "type2_screen": 53, "type2_control": 183},
+          "vinyl_chloride": {"type1_screen": 0.12, "type1_control": 1.2, "type2_screen": 0.43, "type2_control": 4.3},
+          "1,2_dichloroethane": {"type1_screen": 0.52, "type1_control": 6, "type2_screen": 5, "type2_control": 21},
+          "carbon_tetrachloride": {"type1_screen": 0.9, "type1_control": 9, "type2_screen": 2.8, "type2_control": 36}
+        },
+        "selected_SVOCs_mg_kg": {
+          "benzo_a_pyrene": {"type1_screen": 0.55, "type1_control": 5.5, "type2_screen": 1.5, "type2_control": 15},
+          "naphthalene": {"type1_screen": 25, "type1_control": 255, "type2_screen": 70, "type2_control": 700}
+        },
+        "petroleum_hydrocarbons_C10_C40_mg_kg": {
+          "type1_screen": 826,
+          "type1_control": 5000,
+          "type2_screen": 4500,
+          "type2_control": 9000
+        }
+      },
+      "land_use_classification": {
+        "type1_用地": "居住用地（住宅、幼儿园、公园绿地等）、公共服务用地（学校、医院、养老机构等）",
+        "type2_用地": "工业用地、物流仓储用地、商业服务业设施用地、道路与交通设施用地等"
+      },
+      "application_rules": {
+        "le_screen": "风险可忽略，健康一般无需干预",
+        "between_screen_and_control": "可能存在风险，应进一步调查与风险评估",
+        "gt_control": "高风险，应采取必要的修复措施"
+      },
+      "key_clauses_relevant_to_landfill_monitoring": {
+        "slope_stability": "不适用",
+        "leachate": "封场后土壤修复目标值的核心依据。",
+        "gas": "VOCs/SVOCs 项目为填埋气迁移造成的土壤污染提供筛选与管制值。",
+        "groundwater": "不直接规定；地下水参照 GB/T 14848 与 HJ 25.6。",
+        "soil": "表 1 提供 45 项基本项目的筛选值与管制值；表 2 提供其他项目（氰化物、钒、铍、钴、二噁英类等）。"
+      },
+      "source_urls": [
+        "https://sthjj.xm.gov.cn/zwgk/ywxx/wuran/trwrfz/201809/P020201021585650141512.pdf",
+        "https://sthjj.hnloudi.gov.cn/ldstj/slgs/202312/96e91cd3a96b4ead97a58bfe1b709e54/files/f0b8d8ca588c4eb88a95b1981f8fb020.pdf",
+        "https://www.nies.org/xwyl/kydt/201807/t20180713_999170.html"
+      ]
+    },
+    {
+      "code": "GB/T 14848-2017",
+      "name_cn": "地下水质量标准",
+      "name_en": "Standard for groundwater quality",
+      "year": 2017,
+      "status": "现行有效（推荐性）",
+      "issuing_body": "国家质量监督检验检疫总局、国家标准化管理委员会",
+      "effective_date": "2017-10-14",
+      "scope": "地下水质量分类、评价及保护。",
+      "classification": {
+        "I": "地下水化学组分含量较低，适用于各种用途",
+        "II": "地下水化学组分含量较低，适用于各种用途",
+        "III": "以人体健康基准为依据，适用于集中式生活饮用水水源及工、农业用水",
+        "IV": "以农业和工业用水要求为依据，除适用于农业和部分工业用水外，适当处理后可作生活饮用水",
+        "V": "不宜饮用，其他用水可根据使用目的选用"
+      },
+      "key_thresholds_class_III_vs_class_IV_mg_L": {
+        "感官及一般化学": {
+          "pH": {"III": "6.5~8.5", "IV": "5.5~6.5 或 8.5~9.0"},
+          "total_hardness_CaCO3": {"III": 450, "IV": 650},
+          "TDS": {"III": 1000, "IV": 2000},
+          "sulfate": {"III": 250, "IV": 350},
+          "chloride": {"III": 250, "IV": 350},
+          "Fe": {"III": 0.3, "IV": 2.0},
+          "Mn": {"III": 0.10, "IV": 1.50},
+          "Cu": {"III": 1.00, "IV": 1.50},
+          "Zn": {"III": 1.00, "IV": 5.00},
+          "Al": {"III": 0.20, "IV": 0.50},
+          "volatile_phenol": {"III": 0.002, "IV": 0.01},
+          "COD_Mn": {"III": 3.0, "IV": 10.0},
+          "NH3_N": {"III": 0.50, "IV": 1.50},
+          "sulfide": {"III": 0.02, "IV": 0.10},
+          "Na": {"III": 200, "IV": 400}
+        },
+        "微生物": {
+          "total_coliform_MPN_per_100mL": {"III": 3.0, "IV": 100},
+          "colony_count_CFU_per_mL": {"III": 100, "IV": 1000}
+        },
+        "毒理学_常规": {
+          "nitrate_N": {"III": 20.0, "IV": 30.0},
+          "nitrite_N": {"III": 1.00, "IV": 4.80},
+          "fluoride": {"III": 1.0, "IV": 2.0},
+          "cyanide": {"III": 0.05, "IV": 0.10},
+          "Hg": {"III": 0.001, "IV": 0.002},
+          "As": {"III": 0.01, "IV": 0.05},
+          "Se": {"III": 0.01, "IV": 0.10},
+          "Cd": {"III": 0.005, "IV": 0.01},
+          "Cr6+": {"III": 0.05, "IV": 0.10},
+          "Pb": {"III": 0.01, "IV": 0.10},
+          "Ni": {"III": 0.02, "IV": 0.10}
+        },
+        "毒理学_非常规": {
+          "Tl_mg_L": {"III": 0.0001, "IV": 0.001},
+          "benzene_ug_L": {"III": 10, "IV": 120},
+          "toluene_ug_L": {"III": 700, "IV": 1400},
+          "ethylbenzene_ug_L": {"III": 300, "IV": 600},
+          "xylene_total_ug_L": {"III": 500, "IV": 1000},
+          "naphthalene_ug_L": {"IV_only": 600}
+        }
+      },
+      "key_clauses_relevant_to_landfill_monitoring": {
+        "slope_stability": "不适用",
+        "leachate": "封场后地下水对照点（背景值）与污染监测井评价基准。",
+        "gas": "不直接适用",
+        "groundwater": "地下水质量分级与限值；填埋场下游监测井应满足 III 类或按地方加严。",
+        "monitoring": "综合指标（pH、TDS、硬度、COD、氨氮、硫化物、重金属、微生物、VOCs/SVOCs）。"
+      },
+      "source_urls": [
+        "https://sthjj.chizhou.gov.cn/upload_cz/download?siteId=57&id=140327&__simulation_path=4",
+        "https://sthjj.chizhou.gov.cn/upload_cz/download?siteId=57&id=157748&__simulation_path=4"
+      ]
+    },
+    {
+      "code": "HJ 1106-2020",
+      "name_cn": "排污许可证申请与核发技术规范 环境卫生管理业",
+      "name_en": "Technical specification for application and issuance of pollutant permit — Environmental sanitation management industry",
+      "year": 2020,
+      "status": "现行有效（用户列出 HJ 1139-2020 不存在，本文件以 HJ 1106-2020 收录并显式说明）",
+      "issuing_body": "中华人民共和国生态环境部",
+      "effective_date": "2020-02-28",
+      "scope": "生活垃圾填埋场、生活垃圾转运站、粪便处置厂、其他环境卫生管理业排污单位的排污许可证申请与核发。",
+      "applicability_exclusions": {
+        "incineration": "适用 HJ 1039-2019",
+        "industrial_solid_waste": "适用 HJ 1200-2021",
+        "power_plant": "适用火电技术规范",
+        "boiler": "适用 HJ 953",
+        "co_processing_in_cement": "适用水泥/砖瓦行业技术规范"
+      },
+      "key_thresholds": {
+        "leachate_main_pollutants": [
+          "色度", "COD", "BOD5", "SS", "TN", "NH3-N", "TP", "粪大肠菌群数",
+          "总Hg", "总Cd", "总Cr", "Cr6+", "总As", "总Pb"
+        ],
+        "outlet_classification": {
+          "wastewater": {
+            "main_outlet": "生活垃圾填埋场废水总排放口",
+            "general_outlets": "其他废水排放口"
+          },
+          "air": "全部为一般排放口"
+        },
+        "leachate_concentration_compliance": {
+          "COD_mg_L": 100,
+          "NH3_N_mg_L": 25
+        },
+        "applicable_standards": {
+          "landfill_and_transfer_station_wastewater": "GB 16889",
+          "other_environmental_sanitation_wastewater": "GB 8978",
+          "odor": "GB 14554",
+          "other_air_pollutants": "GB 16297"
+        },
+        "self_monitoring_frequency": {
+          "landfill_wastewater_main_outlet_basic_COD_NH3_N_flow_pH": "自动监测（封场后按季度）",
+          "landfill_wastewater_main_outlet_other_pollutants": "季度（封场后按年）",
+          "other_organization_wastewater_outlet": "年",
+          "air_outlets": "半年",
+          "fence_with_landfill_unit": "月",
+          "fence_without_landfill_unit": "季度",
+          "groundwater_around_landfill": "依据相关标准"
+        },
+        "key_vs_simplified_management_diff": {
+          "air_monitoring": {"key": "半年", "simplified": "年"},
+          "wastewater_monitoring": {"key": "自动+季度手工", "simplified": "年"},
+          "ledger_record": {"key": "按班次（>=1次/班）", "simplified": "按月"},
+          "execution_report": {"key": "季度+年度", "simplified": "仅年度"}
+        }
+      },
+      "key_clauses_relevant_to_landfill_monitoring": {
+        "slope_stability": "不适用",
+        "leachate": "渗滤液总排放口自动监测 + 季度手工监测；监测因子覆盖 GB 16889 关键指标。",
+        "gas": "填埋气导排排放口与厂界恶臭按 GB 14554。",
+        "groundwater": "明确填埋场周围地下水监测依据相关标准（即 GB/T 14848 + HJ 25.2 等）。",
+        "monitoring": "7 章自行监测管理要求；9 章实际排放量核算；10 章合规判定。"
+      },
+      "source_urls": [
+        "https://www.mee.gov.cn/ywgz/fgbz/bz/bzwb/pwxk/202003/t20200304_767294.shtml",
+        "https://www.xianyang.gov.cn/zfxxgk/fdzdgknr/sthj/hbyw/202003/t20200317_532577.html",
+        "https://ebook.chinabuilding.com.cn/zbooklib/bookpdf/probation?SiteID=1&bookID=128799"
+      ]
+    },
+    {
+      "code": "AQ 4202",
+      "name_cn": "作业场所气体检测报警仪使用技术规范",
+      "name_en": "Technical specification for use of gas detection and alarm instruments in workplaces",
+      "year": "2008（部分行业引用为 2009；以最新版公告为准）",
+      "status": "现行有效（具体年号以应急管理部 / 国家安全监管总局公告为准）",
+      "issuing_body": "国家安全生产监督管理总局",
+      "scope": "化工、石油、冶金等作业场所中可燃气体、有毒气体检测报警仪的设置、使用与维护。",
+      "key_thresholds": {
+        "methane_alarm_settings": {
+          "methane_LEL_pct_volume": 5.0,
+          "low_level_alarm_pct_LEL": 25,
+          "high_level_alarm_pct_LEL": 50,
+          "low_level_alarm_value_pct_volume": 1.25,
+          "high_level_alarm_value_pct_volume": 2.50
+        }
+      },
+      "key_clauses_relevant_to_landfill_monitoring": {
+        "slope_stability": "不适用",
+        "leachate": "不适用",
+        "gas": "CH4 LEL = 5%VOL；低限报警 25%LEL（1.25%VOL）；高限报警 50%LEL（2.50%VOL）；填埋场作业面、收集井、调节池等封闭/半封闭区域需安装 CH4 在线检测报警仪。",
+        "groundwater": "不适用",
+        "monitoring": "可与 GB 16889-2008 第 10 章甲烷排放控制、GB/T 50493-2019 可燃/有毒气体检测报警设计规范配套使用。"
+      },
+      "source_urls": [
+        "https://www.mem.gov.cn/"
+      ]
+    },
+    {
+      "code": "CJJ/T 17-2004",
+      "name_cn": "城镇建设档案管理工作规范",
+      "name_en": "Code for management of urban construction archives",
+      "year": 2004,
+      "status": "推荐性行业标准；2026-09-01 起《城市建设档案管理规定》（住建部+国家档案局联合发布）施行，作为部门规章层面的更新。",
+      "issuing_body": "中华人民共和国建设部",
+      "scope": "全国各类城镇（含设市城市、县城及建制镇）的建设档案管理工作；与填埋场监测无直接技术耦合，可作为工程档案归档的依据。",
+      "applicability_to_landfill": {
+        "applicable": true,
+        "applies_to": [
+          "填埋场选址、立项、勘察、设计、施工、监理、竣工、封场各阶段文件归档",
+          "封场后土壤/地下水长期监测台账归档",
+          "排污许可证申报材料归档"
+        ],
+        "not_applicable_to": "在线监测技术参数"
+      },
+      "key_thresholds": {
+        "档案收集范围": [
+          "城市规划档案",
+          "城市建设档案（工业与民用建筑、市政基础设施、公用事业等）",
+          "村镇建设档案",
+          "城建系统业务管理与业务技术档案"
+        ]
+      },
+      "key_clauses_relevant_to_landfill_monitoring": {
+        "slope_stability": "归档管理",
+        "leachate": "归档管理",
+        "gas": "归档管理",
+        "groundwater": "归档管理",
+        "monitoring": "归档管理"
+      },
+      "source_urls": [
+        "https://www.mohurd.gov.cn/",
+        "https://www.news.cn/politics/20260507/fb765850be804f6f9d9f54725d598d73/c.html"
+      ]
+    }
+  ],
+  "ai_agent_injection_ready_fields": {
+    "fs_safety_factor": {
+      "normal": 1.30,
+      "seismic": 1.15,
+      "source": "CJJ 176-2012 第 6 章"
+    },
+    "methane_alarm_thresholds": {
+      "LEL_pct_volume": 5.0,
+      "low_alarm_pct_LEL": 25,
+      "high_alarm_pct_LEL": 50,
+      "source": "AQ 4202"
+    },
+    "leachate_head_max_m": 0.30,
+    "leachate_drainage_thickness_mm": {
+      "rain_gt_800mm": 500,
+      "rain_le_800mm": 300
+    },
+    "leachate_effluent_mg_L": {
+      "CODcr": 100,
+      "BOD5": 30,
+      "SS": 30,
+      "NH3_N": 25,
+      "TN": 40
+    },
+    "odor_fence_line_mg_m3": {
+      "NH3": 1.0,
+      "H2S": 0.03,
+      "odor_concentration_dimensionless": 10
+    },
+    "groundwater_well_grid_density_m": {
+      "default": "80x80",
+      "DNAPL_or_high_concentration": "40x40"
+    },
+    "aquifer_stratified_threshold_m": 6,
+    "soil_grid_m": {
+      "type1_screen_As": 20,
+      "type2_screen_As": 60,
+      "type1_screen_Cd": 20,
+      "type2_screen_Cd": 65,
+      "type1_screen_Cr6": 3.0,
+      "type2_screen_Cr6": 5.7,
+      "type1_screen_Pb": 400,
+      "type2_screen_Pb": 800,
+      "type1_screen_Hg": 8,
+      "type2_screen_Hg": 38,
+      "type1_screen_benzene": 1,
+      "type2_screen_benzene": 4,
+      "type1_screen_TPH_C10_C40": 826,
+      "type2_screen_TPH_C10_C40": 4500
+    }
+  }
+}

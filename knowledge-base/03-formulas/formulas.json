@@ -1,0 +1,548 @@
+{
+  "metadata": {
+    "title": "垃圾填埋场岩土工程计算公式手册",
+    "title_en": "Landfill Engineering Calculation Formulas Handbook",
+    "version": "1.0.0",
+    "created_at": "2026-08-22",
+    "purpose": "为 SEA-Agent Web / MultiAgent Diagnosis 系统提供计算公式知识库",
+    "primary_standards": [
+      "CJJ 176-2012 生活垃圾卫生填埋场岩土工程技术规范",
+      "CJJ 113-2007 生活垃圾卫生填埋场环境保护技术规范",
+      "GB 50485-2009 生活垃圾卫生填埋处理技术规范",
+      "HJ 564-2010 生活垃圾填埋场渗滤液处理工程技术规范",
+      "US EPA LandGEM v3.02 (2005)",
+      "US EPA HELP Model v3.07 (1994)"
+    ],
+    "categories_count": 9,
+    "total_formulas": 25
+  },
+  "formulas": {
+    "01_slope_stability": {
+      "title": "边坡稳定 Fs 计算",
+      "title_en": "Slope Stability Factor of Safety",
+      "reference": "CJJ 176-2012 第6章；GB 50485-2009",
+      "sub_formulas": [
+        {
+          "id": "F-01-01",
+          "name": "瑞典圆弧法 (Swedish Circle / Fellenius Method)",
+          "name_en": "Ordinary Method of Slices (Fellenius)",
+          "formula_text": "Fs = [sum(c' * Li + Ni * tan phi')] / sum(Wi * sin(alphai))",
+          "formula_detail": "Fs = Σ{[c'·Lᵢ + (Wᵢ·cos αᵢ − uᵢ·Lᵢ)·tan φ']} / Σ{Wᵢ·sin αᵢ}",
+          "variables": [
+            {"symbol": "Fs", "name": "抗滑稳定安全系数", "unit": "-", "meaning": "抵抗滑动的能力；>1安全，=1临界，<1失稳"},
+            {"symbol": "c'", "name": "有效黏聚力", "unit": "kPa", "typical": "生活垃圾 5~30；黏土 10~50；HDPE界面 0~5"},
+            {"symbol": "Lᵢ", "name": "第i条块滑弧长度", "unit": "m", "meaning": "条块底面弧长"},
+            {"symbol": "Ni", "name": "条块底面法向力", "unit": "kN/m", "meaning": "Ni = Wi·cos αᵢ − uᵢ·Lᵢ"},
+            {"symbol": "Wᵢ", "name": "第i条块重量", "unit": "kN/m", "meaning": "Wᵢ = bᵢ · hᵢ · γᵢ (多层时按层加权)"},
+            {"symbol": "φ'", "name": "有效内摩擦角", "unit": "°", "typical": "生活垃圾 20~35；HDPE/土工织物界面 8~18"},
+            {"symbol": "αᵢ", "name": "第i条块底面倾角", "unit": "°", "meaning": "底面与水平方向夹角，滑出段为正"},
+            {"symbol": "uᵢ", "name": "条块底面孔隙水压力", "unit": "kPa", "meaning": "渗滤液水位作用下产生；浸入段需扣除浮力"}
+          ],
+          "applicable": "圆弧滑动面；层状堆体（多层垃圾/土工膜/黏土）；初算/手算/保守估算",
+          "advantages": "简单、手算可行；结果偏保守（低估5~20%）",
+          "limitations": "忽略条间力；只满足力矩平衡；非圆弧面需换Janbu/Spencer",
+          "safety_thresholds": {
+            "Grade1_H_ge_60m": {"normal": 1.35, "rainfall": 1.30, "seismic": 1.15},
+            "Grade2_30_to_60m": {"normal": 1.30, "rainfall": 1.25, "seismic": 1.10},
+            "Grade3_H_lt_30m": {"normal": 1.25, "rainfall": 1.20, "seismic": 1.05}
+          },
+          "source": "Fellenius 1927 / CJJ 176-2012 §6.5"
+        },
+        {
+          "id": "F-01-02",
+          "name": "Bishop 简化法",
+          "name_en": "Bishop Simplified Method",
+          "formula_text": "Fs = sum{[c'·bi + Wi·tan(phi')]} / sum{Wi·sin(alphai) + kh·Wi·(hi/R)}",
+          "formula_detail": "Fs = Σ{[c'·bᵢ + (Wᵢ − uᵢ·bᵢ)·tan φ']/mα} / Σ{Wᵢ·sin αᵢ}",
+          "variables": [
+            {"symbol": "bᵢ", "name": "条块宽度", "unit": "m", "typical": "0.5~2"},
+            {"symbol": "mα", "name": "Bishop 几何系数", "unit": "-", "meaning": "mα = cos αᵢ + (sin αᵢ·tan φ')/Fs (含Fs迭代求解)"},
+            {"symbol": "R", "name": "滑弧半径", "unit": "m", "meaning": "圆弧滑动面圆心到条块底中点的距离"}
+          ],
+          "iterative_form": "Fs 必须迭代：先设 mα = cos αᵢ，求 Fs⁽¹⁾，代入 mα 再求 Fs⁽²⁾，直到收敛 ε<1e-3",
+          "applicable": "圆弧滑动；考虑条间水平力（忽略切向）；与严格方法误差 <5%",
+          "advantages": "精度高于瑞典圆弧；工程界主流方法",
+          "limitations": "仅适用圆弧；需迭代；非圆弧滑面（沿土工膜界面）需用Janbu/Spencer",
+          "source": "Bishop 1955 / CJJ 176-2012 §6.5"
+        },
+        {
+          "id": "F-01-03",
+          "name": "Janbu 法",
+          "name_en": "Janbu Simplified Method",
+          "formula_text": "Fs = fo · sum{[c'·bi + (Wi - u·bi)·tan(phi')]/mα} / sum{Wi·tan(alphai)}",
+          "formula_detail": "Fs = f₀ · Σ{[c'·bᵢ + (Wᵢ − u·bᵢ)·tan φ'] / mα} / Σ{Wᵢ·tan αᵢ}",
+          "variables": [
+            {"symbol": "f₀", "name": "Janbu 经验修正系数", "unit": "-", "meaning": "f₀ = f(c', φ', L, b, H)，与滑面深度L、坡高H、土性有关；通常查表 1.0~1.4"},
+            {"symbol": "mα_J", "name": "Janbu几何系数", "unit": "-", "meaning": "mα_J = cos²αᵢ · (1 + tan αᵢ·tan φ'/Fs)"}
+          ],
+          "applicable": "任意形状滑动面（折线、复合、沿土工膜界面）；HDPE 衬垫界面滑动分析首选",
+          "advantages": "可分析非圆弧（折线/界面）滑动；条文间力假设不同",
+          "limitations": "精度依赖 f₀ 选取；满足水平力平衡但不严格满足力矩平衡",
+          "typical_interface": "土工膜/土工织物界面：c'≈0, φ'≈8~15°，计算界面滑移",
+          "source": "Janbu 1954/1973 / CJJ 176-2012 §6.5"
+        },
+        {
+          "id": "F-01-04",
+          "name": "拟静力抗震 Fs",
+          "name_en": "Pseudo-Static Seismic Fs",
+          "formula_text": "Fs_seismic = sum(抗滑力矩) / sum(驱动滑矩) with kh",
+          "formula_detail": "Fs = Σ{[c'·Lᵢ + (Wᵢ·cos αᵢ − uᵢ·Lᵢ)·tan φ']} / Σ{Wᵢ·sin αᵢ + kh·Wᵢ·(hᵢ/R) + kv·Wᵢ·sin αᵢ}",
+          "variables": [
+            {"symbol": "kh", "name": "水平向地震系数", "unit": "-", "typical": "0.5 × PGA/g ≈ 0.05~0.20；7度0.05，8度0.10，9度0.20"},
+            {"symbol": "kv", "name": "垂直向地震系数", "unit": "-", "typical": "0.5·kh（近断层）至0（远场）；通常忽略"},
+            {"symbol": "PGA", "name": "峰值地面加速度", "unit": "g", "meaning": "PGA/g 即 kh；若 kh=0.5·PGA/g 设计更合理（Matasovic&Kavazanjian 1998）"},
+            {"symbol": "hᵢ", "name": "条块中心至滑动圆心竖距", "unit": "m", "meaning": "用于计算惯性力矩"}
+          ],
+          "applicable": "CJJ 176-2012 非常运用条件Ⅱ（地震工况）",
+          "advanced": "位移法 Newmark: d = f((1−Fs_seismic)/kh, 地震时程)；允许永久位移 5~15cm",
+          "source": "CJJ 176-2012 §6.1.3 / Seed 1979 / Mononobe-Okabe / Matasovic&Kavazanjian 1998"
+        }
+      ]
+    },
+    "02_leachate_HELP": {
+      "title": "渗滤液产量 HELP 模型",
+      "title_en": "Leachate Production HELP Model",
+      "reference": "US EPA HELP v3.07 / CJJ 176-2012 第7章",
+      "sub_formulas": [
+        {
+          "id": "F-02-01",
+          "name": "经验公式法",
+          "name_en": "Empirical Q = C · A · I",
+          "formula_text": "Q_leachate = C · A · I · 10^-3",
+          "formula_detail": "Q = C × A × I × 10⁻³ (m³/d)",
+          "variables": [
+            {"symbol": "Q", "name": "渗滤液日产量", "unit": "m³/d", "typical": "1000~10000 m³/d（中型填埋场）"},
+            {"symbol": "C", "name": "产污系数/径流系数", "unit": "-", "typical": "0.20~0.50；湿地区取上限，干旱区取下限"},
+            {"symbol": "A", "name": "填埋场汇水面积", "unit": "m²", "typical": "10万~50万 m²"},
+            {"symbol": "I", "name": "多年平均日降雨量", "unit": "mm/d", "typical": "南方2~5；北方0.5~2"}
+          ],
+          "advantages": "简单；初步估算",
+          "limitations": "忽略蒸发、渗漏、储水；误差30~50%",
+          "source": "HJ 564-2010"
+        },
+        {
+          "id": "F-02-02",
+          "name": "水量平衡法",
+          "name_en": "Water Balance Equation",
+          "formula_text": "P = R + ET + deltaS + L",
+          "formula_detail": "P = R + ET + ΔS + L + SRO + INT (mm/d)",
+          "variables": [
+            {"symbol": "P", "name": "降水量", "unit": "mm/d", "typical": "全年输入"},
+            {"symbol": "R", "name": "地表径流", "unit": "mm/d", "typical": "10~30% P"},
+            {"symbol": "ET", "name": "蒸散发量", "unit": "mm/d", "typical": "P 减去 ET、储水变化后剩余水"},
+            {"symbol": "ΔS", "name": "土壤含水层储水变化", "unit": "mm/d", "typical": "长期累计趋于0"},
+            {"symbol": "L", "name": "渗滤液下渗量", "unit": "mm/d", "typical": "30~60% P"},
+            {"symbol": "SRO", "name": "地表径流（含初始雨）", "unit": "mm/d", "typical": "取决于坡度与覆盖"},
+            {"symbol": "INT", "name": "植被截留", "unit": "mm/d", "typical": "一般 <2 mm/雨次"}
+          ],
+          "daily_leachate": "Q (m³/d) = L (mm/d) × A (m²) × 10⁻³",
+          "monthly_factor": "月渗滤液修正系数：0.6~1.4（雨季>1）",
+          "source": "US EPA HELP v3.07 / CJJ 176-2012 §7.2"
+        },
+        {
+          "id": "F-02-03",
+          "name": "HELP 模型分层结构",
+          "name_en": "HELP Layered System",
+          "layers_top_to_bottom": [
+            {"order": 1, "name": "植被/覆盖层", "purpose": "截留、减少ET"},
+            {"order": 2, "name": "顶部土层（封场覆盖）", "purpose": "蓄水，蒸发带"},
+            {"order": 3, "name": "排水层（砂/砾+土工网）", "purpose": "侧向排出渗滤液"},
+            {"order": 4, "name": "土工膜（HDPE 防渗）", "purpose": "阻止下渗"},
+            {"order": 5, "name": "GCL / 压实黏土 CCL", "purpose": "吸附缓冲层"},
+            {"order": 6, "name": "原状地基土", "purpose": "最终屏障"},
+            {"order": 7, "name": "地下水层（毛管水带）", "purpose": "潜水面"}
+          ],
+          "key_percolation": "q_perc = k_sat · i (Darcy 定律)；通过每层水量受其 k 值控制（最低层决定渗率）",
+          "source": "HELP Model v3.07 User Guide (1994)"
+        }
+      ]
+    },
+    "03_landGEM": {
+      "title": "填埋气产量 LandGEM 模型",
+      "title_en": "LandGEM Landfill Gas Generation Model",
+      "reference": "US EPA LandGEM v3.02 (2005)",
+      "sub_formulas": [
+        {
+          "id": "F-03-01",
+          "name": "一阶衰减产气公式",
+          "name_en": "First-Order Decay Equation",
+          "formula_text": "Q_CH4 = sum_i sum_j [k · L0 · (Mi/10) · exp(-k · tij)]",
+          "formula_detail": "Q_CH₄ = Σᵢ₌₁ⁿ Σⱼ₌₀.₁¹ k · L₀ · (Mᵢ/10) · exp(−k · tᵢⱼ)",
+          "variables": [
+            {"symbol": "Q_CH4", "name": "甲烷年产气量", "unit": "m³/year", "typical": "10⁵~10⁷"},
+            {"symbol": "k", "name": "甲烷产气速率常数", "unit": "1/yr", "typical": "US EPA 默认 0.04~0.05；湿填埋场 0.2~0.4；干旱填埋场 0.01~0.05"},
+            {"symbol": "L₀", "name": "甲烷产气潜能", "unit": "m³/Mg", "typical": "US EPA 默认 100（亚洲）/ 170（美国法规）；范围 56.6~312"},
+            {"symbol": "Mᵢ", "name": "第i年填埋垃圾质量", "unit": "Mg", "meaning": "干基或湿基，注意转换"},
+            {"symbol": "tᵢⱼ", "name": "第i年垃圾第j时段龄期", "unit": "yr", "meaning": "tᵢⱼ = 接收年至计算年 − i + (1−j)"}
+          ],
+          "carbon_split": "假定 CH₄:CO₂ ≈ 50:50；总产气量 = Q_CH₄ / 0.5",
+          "sources": [
+            "US EPA LandGEM v3.02 (2005)",
+            "IPCC 2006 第一阶衰减默认",
+            "Faour 2007 湿填埋场参数"
+          ]
+        },
+        {
+          "id": "F-03-02",
+          "name": "IPCC 经验 k 公式",
+          "name_en": "IPCC k Estimate from Rainfall",
+          "formula_text": "k = 3.2e-5 · MAP + 0.01",
+          "formula_detail": "k = 3.2×10⁻⁵ · MAP + 0.01 (1/yr)",
+          "variables": [
+            {"symbol": "MAP", "name": "多年平均降雨量", "unit": "mm/yr", "typical": "深圳 1700 → k ≈ 0.064；北京 540 → k ≈ 0.027"}
+          ],
+          "applicable": "数据缺乏时估算 k",
+          "source": "IPCC 2006 Guidelines Vol.5 Ch.3"
+        },
+        {
+          "id": "F-03-03",
+          "name": "IPCC 经验 L₀ 公式",
+          "name_en": "IPCC L0 Estimate",
+          "formula_text": "L0 = MCF · DOC · DOCf · F · 16/12",
+          "formula_detail": "L₀ = MCF × DOC × DOCf × F × 1.334 (m³/Mg)",
+          "variables": [
+            {"symbol": "MCF", "name": "甲烷修正因子", "unit": "-", "typical": "管理填埋场 1.0；未管理 0.5~0.8"},
+            {"symbol": "DOC", "name": "可降解有机碳比例", "unit": "kg C/kg waste", "typical": "0.15~0.20（生活垃圾）"},
+            {"symbol": "DOCf", "name": "DOC 分解比例", "unit": "-", "typical": "0.50~0.77（管理填埋场取 0.5；不取 0.77）"},
+            {"symbol": "F", "name": "垃圾中甲烷比例", "unit": "-", "typical": "0.5"},
+            {"symbol": "16/12", "name": "CH₄/C 摩尔质量比", "unit": "-", "meaning": "1.334，常数"}
+          ],
+          "source": "IPCC 2006 Guidelines Vol.5 Ch.3 Eq.3.4"
+        }
+      ]
+    },
+    "04_settlement": {
+      "title": "沉降预测 双曲线法",
+      "title_en": "Settlement Prediction Hyperbolic Method",
+      "reference": "CJJ 176-2012 §5.2 / 公路路基规范 JTG D30",
+      "sub_formulas": [
+        {
+          "id": "F-04-01",
+          "name": "双曲线法（基本公式）",
+          "name_en": "Hyperbolic Settlement",
+          "formula_text": "St = t / (a + b·t)",
+          "formula_detail": "S(t) = S₀ + (t − t₀) / [a + b·(t − t₀)]",
+          "variables": [
+            {"symbol": "S(t)", "name": "t 时刻的沉降量", "unit": "cm", "typical": "取决于垃圾厚度；垃圾堆体可占总沉降 20~40%"},
+            {"symbol": "S₀", "name": "参考时刻 t₀ 的初始沉降", "unit": "cm", "meaning": "通常取填埋后 3~6 个月或封场时刻"},
+            {"symbol": "t", "name": "自参考时刻起算的时间", "unit": "d", "typical": "用 30~180 d 以上数据回归"},
+            {"symbol": "a", "name": "回归系数（斜率倒数）", "unit": "d/cm", "meaning": "a = (t − t₀)/(S − S₀) 的截距，由实测数据回归"},
+            {"symbol": "b", "name": "回归系数（衰减）", "unit": "1/cm", "meaning": "b = (t − t₀)/(S − S₀) − a 的斜率"}
+          ],
+          "linear_form": "(t − t₀)/(S − S₀) = a + b·(t − t₀)  ←最小二乘拟合",
+          "final_settlement": {
+            "formula_text": "S_infinity = 1/b  (or S∞ = S₀ + 1/b)",
+            "meaning": "t→∞ 时沉降稳定值"
+          },
+          "applicable": "CJJ 176-2012 §5.2 推荐方法；高填方路堤沉降；垃圾堆体主沉降",
+          "data_requirement": "≥ 90~180 d 沉降实测数据；越接近稳定，b 越准确",
+          "typical_parameters": "垃圾堆体：a=0.05~0.20, b=0.001~0.005 (1/cm)；S∞ = 200~600 cm（总沉降占填埋厚度 20~40%）",
+          "limitations": "经验公式；理论上不收敛；前期沉降大时预测偏大",
+          "source": "CJJ 176-2012 §5.2 / JTG D30-2015 附录"
+        },
+        {
+          "id": "F-04-02",
+          "name": "次压缩沉降(蠕变)",
+          "name_en": "Secondary Compression (Creep)",
+          "formula_text": "S_s = C_alpha · H0 · log(t / t1)",
+          "formula_detail": "Sₛ = Cα · H₀ · log(t / t₁)",
+          "variables": [
+            {"symbol": "Cα", "name": "次压缩系数", "unit": "-", "typical": "生活垃圾 0.05~0.30；与垃圾龄期、有机质相关"},
+            {"symbol": "H₀", "name": "垃圾层初始厚度", "unit": "m", "meaning": "对应填埋时的厚度"},
+            {"symbol": "t", "name": "当前时间", "unit": "d"},
+            {"symbol": "t₁", "name": "主压缩结束时间", "unit": "d", "typical": "30~180 d"}
+          ],
+          "source": "Mesri 1985 / CJJ 176-2012 §5.2.4"
+        }
+      ]
+    },
+    "05_HDPE_liner_check": {
+      "title": "HDPE 土工膜验算",
+      "title_en": "HDPE Geomembrane Liner Check",
+      "reference": "CJJ 176-2012 §6.6 / CJJ 113-2007 附录D / GRI GM13/GRI GM19",
+      "sub_formulas": [
+        {
+          "id": "F-05-01",
+          "name": "土工膜拉应变验算 (应变协调)",
+          "name_en": "Geomembrane Tensile Strain Check",
+          "formula_text": "epsilon_M = [(delta − f) / sqrt((delta − f)^2 + L²)] − [(delta − f) / L] · arcsin(...",
+          "formula_detail": "εₘ = [2πδ/L] · (cos⁻¹(r / (L + δ/π))) / √(...) — 简化见 Giroud 1995；CJJ 176-2012 附录B",
+          "variables": [
+            {"symbol": "εₘ", "name": "土工膜最大允许拉应变", "unit": "%", "typical": "允许 ≤ 5~8%；高密度聚乙烯HDPE 屈服应变 ~12~15%；极限 ~700%"},
+            {"symbol": "δ", "name": "凹陷深度", "unit": "m", "meaning": "局部下沉产生的凹陷变形；可由沉降差与跨度推算"},
+            {"symbol": "L", "name": "凹陷跨度", "unit": "m", "meaning": "沉降差异两端的距离"},
+            {"symbol": "f", "name": "凹陷最大挠度", "unit": "m"}
+          ],
+          "giroud_1995": "εₘ = [2πf/L] · (cos⁻¹[(L/2)/(L/2+f)] ) ≈ 2f·π / (L + 2f) — 简化近似",
+          "check": "若 εₘ > 允许应变 → 增加加筋（GCL 或土工格栅）",
+          "source": "Giroud 1995 / CJJ 176-2012 附录B"
+        },
+        {
+          "id": "F-05-02",
+          "name": "焊缝强度验算",
+          "name_en": "Weld Seam Strength Check",
+          "formula_text": "f_weld / f_base >= k_seam",
+          "formula_detail": "σ_weld ≥ σ_base × k_seam ; f_weld ≥ f_base × k_seam",
+          "variables": [
+            {"symbol": "f_weld", "name": "焊缝抗剪/剥离强度", "unit": "N/mm", "typical": "HDPE 1.5mm 热楔焊：剪切 ≥21.2 N/mm；剥离 ≥15.7 N/mm"},
+            {"symbol": "f_base", "name": "母材抗拉/抗剪强度", "unit": "N/mm", "typical": "HDPE 屈服强度 22~27 MPa（折合 N/mm：22~27 N/mm）"},
+            {"symbol": "k_seam", "name": "焊缝强度折减系数", "unit": "-", "typical": "CJJ 113-2007 ≥0.95（剪切），≥0.90（剥离）"}
+          ],
+          "test_methods": [
+            "CJ/T 234-2006 现场撕裂试验",
+            "GB/T 17643 土工膜测试",
+            "GRI GM19 焊缝测试"
+          ],
+          "welding_methods": [
+            "热楔焊（热合）：双轨搭接 >100 mm；用于主焊缝",
+            "挤出焊：单轨搭接 75 mm；用于细部修补"
+          ],
+          "source": "CJJ 113-2007 附录D / GRI GM19 / CJ/T 234-2006"
+        },
+        {
+          "id": "F-05-03",
+          "name": "界面剪切强度",
+          "name_en": "Interface Shear Strength",
+          "formula_text": "tau_f = c_a + sigma_n · tan(delta)",
+          "formula_detail": "τf = cₐ + σₙ · tan δ",
+          "variables": [
+            {"symbol": "τf", "name": "界面抗剪强度", "unit": "kPa", "typical": "HDPE/土工织物 5~15 kPa；HDPE/压实黏土 10~30 kPa"},
+            {"symbol": "cₐ", "name": "界面黏聚力", "unit": "kPa", "typical": "0~10（大多数 HDPE/土界面接近 0）"},
+            {"symbol": "σₙ", "name": "界面法向应力", "unit": "kPa", "meaning": "由上覆堆体压力产生"},
+            {"symbol": "δ", "name": "界面摩擦角", "unit": "°", "typical": "HDPE/土工织物 δ ≈ 8~18°；HDPE/黏土 δ ≈ 15~25°"}
+          ],
+          "check": "界面强度 < 内部强度 → 沿界面滑移为控制工况；必须用 Janbu / Spencer 验算",
+          "test": "大型直剪仪 ≥ 30cm × 30cm；三轴 ≥ 8cm 直径；CJJ 176-2012 §6.2.3",
+          "source": "CJJ 176-2012 §6.2 / ASTM D5321 / D6243"
+        }
+      ]
+    },
+    "06_composite_liner": {
+      "title": "复合衬垫等效渗透系数",
+      "title_en": "Composite Liner Equivalent Permeability",
+      "reference": "Rowe 1995 / Giroud 1997 / CJJ 176-2012 §6.6",
+      "sub_formulas": [
+        {
+          "id": "F-06-01",
+          "name": "调和平均（厚度加权）",
+          "name_en": "Thickness-Weighted Harmonic Mean",
+          "formula_text": "k_eq = (Hf + Hm) / (Hf/kf + Hm/km)",
+          "formula_detail": "k_eq = (H_f + H_m) / (H_f/k_f + H_m/k_m)",
+          "variables": [
+            {"symbol": "k_eq", "name": "复合衬垫等效渗透系数", "unit": "m/s", "typical": "HDPE+GCL 系统 1e-12~1e-10"},
+            {"symbol": "H_m", "name": "矿物料层厚度 (GCL/CCL)", "unit": "m", "typical": "GCL 0.005~0.01；CCL 0.6~1.5"},
+            {"symbol": "H_f", "name": "衰减层厚度", "unit": "m", "meaning": "通常 GCL 视为衰减层；或指 CCL"},
+            {"symbol": "k_m", "name": "矿物料层渗透系数", "unit": "m/s", "typical": "GCL 1e-12~5e-11；CCL 1e-9~1e-8"},
+            {"symbol": "k_f", "name": "衰减层渗透系数", "unit": "m/s", "meaning": "通常与 k_m 同层；如分层则单独取值"}
+          ],
+          "note": "调和平均假定层流；各层水量相等；保守估计",
+          "source": "Rowe 1995 / Giroud 1997"
+        },
+        {
+          "id": "F-06-02",
+          "name": "Giroud 缺陷渗漏公式",
+          "name_en": "Giroud Defect Leakage Rate",
+          "formula_text": "Q_a = 0.976 · Cq · gamma_w · Hw^0.9 · a^0.1 · k_s^0.74",
+          "formula_detail": "Q = 0.976 · Cq · γw · Hw^0.9 · a^0.1 · ks^0.74 (m³/s)",
+          "variables": [
+            {"symbol": "Q", "name": "通过缺陷的渗漏流量", "unit": "m³/s", "typical": "单缺陷 1~1000 L/d"},
+            {"symbol": "Cq", "name": "接触质量系数", "unit": "-", "typical": "良好接触 0.21；不良 0.47；无渗透系数1.15"},
+            {"symbol": "γw", "name": "水的重度", "unit": "N/m³", "typical": "9810"},
+            {"symbol": "Hw", "name": "渗滤液水头高度", "unit": "m", "typical": "0.3~1.0"},
+            {"symbol": "a", "name": "缺陷面积", "unit": "m²", "typical": "1e-6 (1mm²) ~ 1e-4 (1cm²)"},
+            {"symbol": "ks", "name": "下卧层渗透系数", "unit": "m/s", "typical": "GCL 1e-10；CCL 1e-9"}
+          ],
+          "typical_defects": "施工缺陷密度：1~10 个/公顷（参考 EPA）",
+          "source": "Giroud & Bonaparte 1989 / Giroud 1997"
+        },
+        {
+          "id": "F-06-03",
+          "name": "通过完好土工膜的扩散通量",
+          "name_en": "Diffusive Flux through Intact Geomembrane",
+          "formula_text": "J_D = D_g · (C0 - C1) / H_g",
+          "formula_detail": "J_D = D_g · (C₀ − C₁) / H_g (kg/m²/s)",
+          "variables": [
+            {"symbol": "J_D", "name": "扩散通量", "unit": "kg/(m²·s)", "typical": "VOC 1e-12~1e-10"},
+            {"symbol": "D_g", "name": "污染物在 HDPE 中扩散系数", "unit": "m²/s", "typical": "1e-13~1e-12（HDPE 中 VOC）"},
+            {"symbol": "H_g", "name": "HDPE 厚度", "unit": "m", "typical": "0.0015~0.0025"},
+            {"symbol": "C₀/C₁", "name": "上/下侧浓度", "unit": "kg/m³"}
+          ],
+          "source": "Rowe 1995 / Park & Nibras 1993"
+        }
+      ]
+    },
+    "07_contaminant_transport": {
+      "title": "污染物运移 对流-弥散",
+      "title_en": "Contaminant Transport 1D Advection-Dispersion",
+      "reference": "Ogata & Banks 1961 / Bear 1979 / CJJ 176-2012 第9章",
+      "sub_formulas": [
+        {
+          "id": "F-07-01",
+          "name": "一维对流-弥散方程（Ogata-Banks 解）",
+          "name_en": "1D ADE Ogata-Banks Solution",
+          "formula_text": "C/C0 = 0.5 · {erfc((x - v·t)/(2·sqrt(D·t))) + exp(v·x/D) · erfc((x + v·t)/(2·sqrt(D·t)))}",
+          "formula_detail": "C(x,t)/C₀ = (1/2)·[erfc((x − v·t)/(2·√(D·t))) + exp(v·x/D)·erfc((x + v·t)/(2·√(D·t)))]",
+          "variables": [
+            {"symbol": "C(x,t)", "name": "位置x时间t的浓度", "unit": "mg/L", "typical": "0~C₀"},
+            {"symbol": "C₀", "name": "源浓度", "unit": "mg/L", "typical": "渗滤液 Cl⁻ ≈ 1500~5000；COD 5000~30000"},
+            {"symbol": "x", "name": "迁移距离", "unit": "m", "typical": "0~50"},
+            {"symbol": "t", "name": "迁移时间", "unit": "d", "typical": "30~3650"},
+            {"symbol": "v", "name": "地下水流速", "unit": "m/d", "typical": "10⁻³~10⁻¹（取决于 i 和 k）"},
+            {"symbol": "D", "name": "水动力弥散系数", "unit": "m²/d", "typical": "αL·v ; αL ≈ 1~100 m（纵向弥散度）"},
+            {"symbol": "erfc", "name": "余补误差函数", "unit": "-", "meaning": "erfc(u) = 1−erf(u)；高斯函数积分"}
+          ],
+          "governing_PDE": "R·dC/dt = D·d²C/dx² − v·dC/dx − λ·C ; R = 1+ρb·Kd/n",
+          "boundary_conditions": "C(0,t) = C₀ ; C(∞,t) = 0 ; C(x,0) = 0",
+          "with_retardation": "C(x,t)/C₀ = (1/2)·[erfc((x·R − v·t)/(2·√(D·R·t))) + exp(v·x/D)·erfc((x·R + v·t)/(2·√(D·R·t)))]",
+          "with_decay": "C(x,t) · exp(λ·t)（乘以衰减）",
+          "first_term_only": "当 vx/D > 500（主对流主导）时，仅第一项近似： C/C₀ ≈ 0.5·erfc((x − v·t/R)/(2·√(D·t/R)))",
+          "source": "Ogata & Banks 1961 (USGS) / Bear 1979 / CJJ 176-2012 §9"
+        },
+        {
+          "id": "F-07-02",
+          "name": "纵向弥散度参考值",
+          "name_en": "Longitudinal Dispersivity Values",
+          "table": [
+            {"scale_m": "<1", "alpha_L_m": "0.001~0.01", "media": "实验室柱"},
+            {"scale_m": "1~10", "alpha_L_m": "0.1~1", "media": "野外小尺度"},
+            {"scale_m": "10~100", "alpha_L_m": "1~10", "media": "中尺度场地"},
+            {"scale_m": ">100", "alpha_L_m": "10~100", "media": "区域含水层"}
+          ],
+          "note": "Gelhar 1992 总结；场地尺度越大弥散度越大（尺度效应）",
+          "source": "Gelhar 1992 / Neuman 1990"
+        }
+      ]
+    },
+    "08_circulation_well": {
+      "title": "循环井影响半径",
+      "title_en": "Circulation Well Radius of Influence",
+      "reference": "Kusakin 经验式 / Zhang 2024 Hydrogeology Journal",
+      "sub_formulas": [
+        {
+          "id": "F-08-01",
+          "name": "Kusakin 体积平衡法",
+          "name_en": "Kusakin Volume-Balance Equation",
+          "formula_text": "R = sqrt(Q · t / (pi · H · n_e))",
+          "formula_detail": "R = √(Q·t / (π·H·nₑ))",
+          "variables": [
+            {"symbol": "R", "name": "影响半径", "unit": "m", "typical": "5~50（GCW 修复井）"},
+            {"symbol": "Q", "name": "循环/抽注流量", "unit": "m³/d", "typical": "100~1000"},
+            {"symbol": "t", "name": "运行时间", "unit": "d", "typical": "30~365"},
+            {"symbol": "H", "name": "含水层饱和厚度", "unit": "m", "typical": "5~30"},
+            {"symbol": "nₑ", "name": "有效孔隙度", "unit": "-", "typical": "砂层 0.15~0.25；粉砂 0.10~0.15"},
+            {"symbol": "π", "name": "圆周率", "unit": "-", "typical": "3.14159"}
+          ],
+          "assumptions": "圆柱形影响区；体积平衡；不考虑边界补充",
+          "alternatives": [
+            "Weber: R = 2.45·H·√(k·t/nₑ)  (无压含水层)",
+            "Cooper-Jacob: R = 2.25·√(T·t/S)  (承压含水层)",
+            "Siechardt: R = 3000·sw·√k  (经验式，m/d单位)",
+            "Lembke: R = H·√(k·t/N)  (考虑越流补给)"
+          ],
+          "GCW_note": "循环井(GCW)上下抽注同时进行，影响半径小于传统抽水井；Zhang 2024 指出垂向渗透率增大 → 影响半径减小（因为循环更快形成短路）",
+          "source": "Kusakin 经验式 / Zhang 2024 Hydrogeology Journal 32:817 / Liu 2024 环境科学研究"
+        }
+      ]
+    },
+    "09_capacity": {
+      "title": "库容估算",
+      "title_en": "Landfill Capacity Estimation",
+      "reference": "CJJ 176-2012 §5.5 / 测量学标准",
+      "sub_formulas": [
+        {
+          "id": "F-09-01",
+          "name": "简化矩形法",
+          "name_en": "Simplified Rectangular",
+          "formula_text": "V = A · H",
+          "formula_detail": "V = A · H (m³)",
+          "variables": [
+            {"symbol": "V", "name": "库容体积", "unit": "m³", "typical": "10⁵~10⁷"},
+            {"symbol": "A", "name": "平均填埋面积", "unit": "m²", "typical": "10万~50万"},
+            {"symbol": "H", "name": "平均填埋深度", "unit": "m", "typical": "20~60"}
+          ],
+          "applicable": "概念设计/方案估算",
+          "limitations": "忽略边坡几何，误差20~40%",
+          "source": "CJJ 176-2012 §5.5 简化法"
+        },
+        {
+          "id": "F-09-02",
+          "name": "台体/截锥体法",
+          "name_en": "Frustum (Trapezoidal Pyramid)",
+          "formula_text": "V = (H/3) · (A_top + A_bottom + sqrt(A_top · A_bottom))",
+          "formula_detail": "V = (H/3)·(A₁ + A₂ + √(A₁·A₂)) (m³)",
+          "variables": [
+            {"symbol": "A₁", "name": "顶面面积", "unit": "m²"},
+            {"symbol": "A₂", "name": "底面面积", "unit": "m²"},
+            {"symbol": "H", "name": "高度", "unit": "m"}
+          ],
+          "applicable": "棱台形堆体（四边坡）；精度高于矩形法",
+          "source": "测量学公式"
+        },
+        {
+          "id": "F-09-03",
+          "name": "梯形断面平均断面法",
+          "name_en": "Average End Area Method",
+          "formula_text": "V = L · (A1 + A2) / 2",
+          "formula_detail": "V = (L/2) · (A₁ + A₂) (m³)",
+          "variables": [
+            {"symbol": "L", "name": "两断面间距", "unit": "m"},
+            {"symbol": "A₁/A₂", "name": "两端断面面积", "unit": "m²"}
+          ],
+          "extensions": "多断面：V = (D/2)·[A₁+An + 2·ΣAᵢ内]",
+          "source": "测量学"
+        },
+        {
+          "id": "F-09-04",
+          "name": "带边坡校正的横断面",
+          "name_en": "Slope-Corrected Cross-Section",
+          "formula_text": "A = (b + n·h) · h",
+          "formula_detail": "A = (b + n·h)·h (m²)",
+          "variables": [
+            {"symbol": "b", "name": "底宽", "unit": "m"},
+            {"symbol": "n", "name": "边坡比", "unit": "-", "typical": "填埋场 1:2~1:3，即 n=2~3"},
+            {"symbol": "h", "name": "堆高", "unit": "m"}
+          ],
+          "two_level_section": "横坡情况：A = (s² − n²)/(n·b²) + 2·s²·b·h + n·s²·h² (s 为横向坡度比)",
+          "source": "测量学横断面计算"
+        },
+        {
+          "id": "F-09-05",
+          "name": "考虑沉降的实际库容",
+          "name_en": "Settlement-Adjusted Capacity",
+          "formula_text": "V_real = V_geom · (1 - S_infinity / H0)",
+          "formula_detail": "V_实际 = V_几何 · (1 − ΔS/H₀)",
+          "variables": [
+            {"symbol": "V_几何", "name": "设计几何库容", "unit": "m³"},
+            {"symbol": "ΔS", "name": "总沉降（双曲线法推算）", "unit": "m"},
+            {"symbol": "H₀", "name": "初始堆高", "unit": "m"}
+          ],
+          "typical": "垃圾堆体沉降占堆高 20~40%；需通过分阶段堆填补偿",
+          "phased_filling": "分级堆填系数 1.2~1.4（实际填埋量 / 设计填埋量）",
+          "source": "CJJ 176-2012 §5.5"
+        }
+      ]
+    }
+  },
+  "unit_conversion_table": {
+    "1 MPa": "10⁶ Pa = 10³ kPa = 145 psi",
+    "1 N/mm": "1 kN/m = 1000 kPa · mm / m 实际即MPa·mm",
+    "1 cm/s (hydraulic conductivity)": "= 864 m/d = 3.15×10⁷ m/yr",
+    "1 Mg (Megagram)": "= 1 t = 1000 kg",
+    "1 g (gravity)": "= 9.81 m/s² = 981 cm/s²",
+    "0.5 × PGA/g": "PGA 取值：中国 7度 0.10g，8度 0.20g，9度 0.40g"
+  },
+  "key_references": [
+    {"id": "CJJ 176-2012", "title": "生活垃圾卫生填埋场岩土工程技术规范", "lang": "zh"},
+    {"id": "CJJ 113-2007", "title": "生活垃圾卫生填埋场环境保护技术规范", "lang": "zh"},
+    {"id": "GB 50485-2009", "title": "生活垃圾卫生填埋处理技术规范", "lang": "zh"},
+    {"id": "HJ 564-2010", "title": "生活垃圾填埋场渗滤液处理工程技术规范", "lang": "zh"},
+    {"id": "Fellenius 1927", "title": "Erdstatische Berechnungen", "lang": "en"},
+    {"id": "Bishop 1955", "title": "The use of the Slip Circle in the Stability Analysis of Slopes", "lang": "en"},
+    {"id": "Janbu 1954", "title": "Application of composite slip surface for stability analysis", "lang": "en"},
+    {"id": "Ogata-Banks 1961", "title": "A solution of the differential equation of longitudinal dispersion in porous media", "lang": "en"},
+    {"id": "LandGEM v3.02", "title": "EPA Landfill Gas Emissions Model (2005)", "lang": "en"},
+    {"id": "HELP v3.07", "title": "EPA Hydrologic Evaluation of Landfill Performance Model User Manual (1994)", "lang": "en"},
+    {"id": "Giroud 1995", "title": "Geomembrane strain calculation", "lang": "en"},
+    {"id": "GRI GM13/GM19", "title": "HDPE Geomembrane / Seam specifications", "lang": "en"}
+  ]
+}

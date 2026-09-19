@@ -1,0 +1,28 @@
+node_modules/
+.env
+dist/
+data/*
+!data/ogs/
+data/ogs/*
+!data/ogs/bin/
+!data/ogs/scenarios/
+test-screenshots/
+vite-dev.log
+server-dev.log
+*.log
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
+ui-test-report.json
+.doc
+.pdf
+.docx
+
+# Debug 截图与探针脚本
+.debug/
+
+# OGS 求解器与场景模板是打包资产，需随仓库提交（覆盖上面的 data/ 忽略）
+!data/ogs/
+data/ogs/*
+!data/ogs/bin/
+!data/ogs/scenarios/

@@ -1,0 +1,19 @@
+# 排除构建上下文里的大文件 / 敏感文件
+node_modules
+.git
+dist
+data
+*.log
+.env
+.env.local
+.env.*.local
+.vscode
+.idea
+.DS_Store
+test-screenshots
+playwright-report
+playwright/.cache
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
+node_modules/.vite
