@@ -396,7 +396,10 @@ export default function DiagnosisPage() {
     navigate('/chat/new');
   };
 
-  // 把诊断结果写给 3D 场景（sessionStorage 一次性信封，SimulatorPage 消费）
+  // v5.3：经典风格化 3D 场景（/scene-classic）已随两个 3D 入口合并而退役。
+  // 这里仍把诊断结果写进 sessionStorage 存档，便于后续需要时接回可视化；
+  // 原本消费它的「🏔 在 3D 中查看风险分布」按钮已移除 —— 新的三维建模分析页
+  // 渲染的是**内核真实几何**，与风险热点图层不是同一件事，指过去会误导。
   const persistForScene = (r: DiagnosisResult) => {
     try {
       sessionStorage.setItem('diagnosis-latest', JSON.stringify({
@@ -596,7 +599,7 @@ export default function DiagnosisPage() {
       <div className="flex h-full">
         {/* 左侧输入面板 */}
         <div
-          className="w-80 flex-shrink-0 border-r overflow-y-auto"
+          className="w-80 3xl:w-96 flex-shrink-0 border-r overflow-y-auto"
           style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-surface)' }}
         >
           {/* 输入模式切换 */}
@@ -769,7 +772,7 @@ export default function DiagnosisPage() {
               </p>
             </div>
           ) : (
-            <div className="space-y-5 max-w-4xl">
+            <div className="space-y-5 max-w-4xl 3xl:max-w-[1280px] mx-auto">
               {/* 后端异常显式标注（演示模式兜底，避免静默误导评委） */}
               {backendError.hasError && (
                 <div
@@ -1053,14 +1056,6 @@ export default function DiagnosisPage() {
                           style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-secondary)' }}>
                       图例：🔴 红=重大  🟠 橙=较大  🟡 黄=一般  🟢 虚线箭头=应急疏散路线
                     </span>
-                    <button
-                      onClick={() => navigate('/3d-simulator')}
-                      className="text-[10px] px-2.5 py-1 rounded-full border flex items-center gap-1 transition-colors"
-                      style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
-                      title="风险热点已同步到三维场景（无需手动操作）"
-                    >
-                      🏔 在 3D 中查看风险分布
-                    </button>
                   </div>
                 </div>
               )}

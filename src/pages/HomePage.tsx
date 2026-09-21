@@ -6,6 +6,7 @@ import type { DiagnosisResult } from '../types';
 import { buildSafetyBrief } from '../utils/safetyBrief';
 import { openPrintableHtml, exportEmergencyPosterHtml } from '../utils/exporter';
 import { generateEmergencyPosterHtml, getDemoEmergencyData } from '../utils/emergencyPoster';
+import { PAGE_MAXW, widePx } from '../utils/layout';
 // 3D 场景约 500KB（three.js），懒加载避免拖慢首页首屏
 const LandfillScene3D = lazy(() => import('../components/LandfillScene3D'));
 
@@ -76,7 +77,7 @@ function FeatureCard({ icon, title, desc, badge, gradient, glowColor, onClick }:
     <motion.button
       variants={itemVariants}
       onClick={onClick}
-      className="group relative w-full text-left rounded-2xl p-5 border overflow-hidden transition-all duration-300"
+      className="group relative w-full text-left rounded-2xl p-5 3xl:p-6 border overflow-hidden transition-all duration-300"
       style={{
         backgroundColor: 'var(--bg-surface)',
         borderColor: 'var(--border)',
@@ -94,7 +95,7 @@ function FeatureCard({ icon, title, desc, badge, gradient, glowColor, onClick }:
       />
       {/* 图标区：渐变背景 + 悬浮放大 */}
       <div
-        className="relative w-11 h-11 rounded-xl flex items-center justify-center mb-3 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
+        className="relative w-11 h-11 3xl:w-12 3xl:h-12 rounded-xl flex items-center justify-center mb-3 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3"
         style={{
           background: gradient,
           boxShadow: `0 6px 20px ${glowColor}55`,
@@ -104,7 +105,7 @@ function FeatureCard({ icon, title, desc, badge, gradient, glowColor, onClick }:
       </div>
       {/* 标题行 */}
       <div className="relative flex items-center gap-2 mb-1.5">
-        <h3 className="text-[15px] font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</h3>
+        <h3 className="text-[15px] 3xl:text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</h3>
         {badge && (
           <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold tracking-wide"
                 style={{ background: gradient, color: '#fff' }}>
@@ -112,7 +113,7 @@ function FeatureCard({ icon, title, desc, badge, gradient, glowColor, onClick }:
           </span>
         )}
       </div>
-      <p className="relative text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{desc}</p>
+      <p className="relative text-xs 3xl:text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{desc}</p>
       {/* 悬浮箭头 */}
       <div className="absolute top-5 right-5 opacity-40 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all duration-200"
            style={{ color: glowColor }}>
@@ -243,7 +244,7 @@ export default function HomePage() {
         {/* 底部柔化过渡到浅色页面 */}
         <div className="absolute inset-x-0 bottom-0 h-40" style={{ background: 'linear-gradient(to top, var(--bg-base), transparent)' }} />
 
-        <div className="relative z-10 max-w-6xl mx-auto px-6 py-16 w-full grid lg:grid-cols-[1.4fr_1fr] gap-10 items-center">
+        <div className={`relative z-10 ${PAGE_MAXW} px-6 3xl:px-8 py-16 3xl:py-20 w-full grid lg:grid-cols-[1.4fr_1fr] gap-10 items-center`}>
           <motion.div
             variants={containerVariants}
             initial="hidden"
@@ -268,7 +269,7 @@ export default function HomePage() {
 
             {/* 主标题（渐变文字 + 强对比） */}
             <motion.h1 variants={itemVariants} className="mb-3 leading-[1.05]">
-              <span className="block text-5xl md:text-6xl font-extrabold tracking-tight gradient-text" style={{ filter: 'drop-shadow(0 4px 24px rgba(0,0,0,0.18))' }}>
+              <span className="block text-5xl md:text-6xl 3xl:text-7xl font-extrabold tracking-tight gradient-text" style={{ filter: 'drop-shadow(0 4px 24px rgba(0,0,0,0.18))' }}>
                 LandfillMind
               </span>
               <span
@@ -281,7 +282,7 @@ export default function HomePage() {
 
             {/* 副标题 */}
             <motion.p variants={itemVariants}
-              className="text-sm leading-relaxed mb-7 max-w-xl"
+              className="text-sm 3xl:text-base leading-relaxed mb-7 max-w-xl 3xl:max-w-2xl"
               style={{ color: 'rgba(255,255,255,0.82)' }}
             >
               基于多智能体协同推理的填埋场/地下水污染场地 AI 诊断系统。
@@ -402,7 +403,7 @@ export default function HomePage() {
       </section>
 
       {/* ===== 核心数据指标 ===== */}
-      <section className="max-w-6xl mx-auto px-6 pt-10 pb-8 -mt-12 relative z-20">
+      <section className={`${PAGE_MAXW} px-6 3xl:px-8 pt-10 pb-8 -mt-12 relative z-20`}>
         <motion.div
           variants={containerVariants}
           initial="hidden"
@@ -425,7 +426,7 @@ export default function HomePage() {
       </section>
 
       {/* ===== 大数字 Trust Bar ===== */}
-      <section className="max-w-6xl mx-auto px-6 pb-10">
+      <section className={`${PAGE_MAXW} px-6 3xl:px-8 pb-10`}>
         <motion.div
           initial="hidden"
           whileInView="visible"
@@ -460,7 +461,7 @@ export default function HomePage() {
       </section>
 
       {/* ===== 三维场地模型 ===== */}
-      <section className="max-w-6xl mx-auto px-6 pb-12">
+      <section className={`${PAGE_MAXW} px-6 3xl:px-8 pb-12`}>
         <div className="flex items-end justify-between flex-wrap gap-3 mb-5">
           <div>
             <h2 className="text-lg font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
@@ -482,7 +483,7 @@ export default function HomePage() {
           style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-surface)', boxShadow: '0 12px 40px rgba(8,47,73,0.08)' }}
         >
           <Suspense fallback={
-            <div className="h-[560px] flex items-center justify-center" style={{ backgroundColor: 'var(--bg-base)' }}>
+            <div className="flex items-center justify-center" style={{ backgroundColor: 'var(--bg-base)', height: widePx(560, 740) }}>
               <div className="text-center">
                 <div className="w-8 h-8 border-[3px] rounded-full mx-auto mb-2 animate-spin"
                      style={{ borderColor: 'var(--border)', borderTopColor: 'var(--primary)' }} />
@@ -490,7 +491,7 @@ export default function HomePage() {
               </div>
             </div>
           }>
-            <LandfillScene3D height={560} />
+            <LandfillScene3D height={widePx(560, 740)} />
           </Suspense>
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -510,7 +511,7 @@ export default function HomePage() {
       </section>
 
       {/* ===== 功能入口 ===== */}
-      <section className="max-w-6xl mx-auto px-6 pb-10">
+      <section className={`${PAGE_MAXW} px-6 3xl:px-8 pb-10`}>
         <motion.div
           variants={containerVariants}
           initial="hidden"
@@ -557,7 +558,7 @@ export default function HomePage() {
       </section>
 
       {/* ===== 工友安全 ===== */}
-      <section className="max-w-6xl mx-auto px-6 pb-10">
+      <section className={`${PAGE_MAXW} px-6 3xl:px-8 pb-10`}>
         <div className="rounded-2xl border p-5" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-surface)' }}>
           <div className="flex items-center gap-2 mb-1">
             <HardHat size={16} style={{ color: '#f59e0b' }} />
@@ -723,7 +724,7 @@ export default function HomePage() {
         className="border-t"
         style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-surface)' }}
       >
-        <div className="max-w-6xl mx-auto px-6 py-8">
+        <div className={`${PAGE_MAXW} px-6 3xl:px-8 py-8`}>
           <div className="flex items-center gap-2 mb-5">
             <BookOpen size={16} style={{ color: 'var(--primary)' }} />
             <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>

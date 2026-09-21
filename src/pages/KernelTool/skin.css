@@ -1,0 +1,268 @@
+/* ==========================================================================
+   skin.css · 桌面工具（Landfill 3D Tool / Tkinter v1.7.0）亮色皮肤
+   --------------------------------------------------------------------------
+   做法：在页面根节点挂 .lf-light，在**这个作用域内**重定义 agent 的 CSS 变量。
+   全部组件都走 var(--x)，CSS 变量按继承生效，所以一处覆盖即全页生效，且不会
+   污染 agent 其它页面（.lf-light 是 html.dark 的后代，就近继承自然胜出）。
+
+   色值全部取自桌面 app.py:148-158 的亮色常量，不要凭观感调。
+   ========================================================================== */
+
+.lf-light {
+  /* ---- 桌面核心色板 (app.py:148-158) ---- */
+  --bg-base: #eef2f8;        /* BG      主背景 / 图形区底 */
+  --bg-base-2: #eef2f8;
+  --bg-surface: #ffffff;     /* PANEL   面板卡片 / 左栏 / 结果条 */
+  --bg-elevated: #e3ebf5;    /* PANEL2  工具栏 / 状态栏 / 表头底 */
+  --bg-input: #ffffff;       /* INPUT   输入框 */
+  --border: #c3d0e0;         /* BORDER  边框 / 分隔 */
+  --border-accent: #c3d0e0;
+  --primary: #0d7fd6;        /* ACCENT  选中页签 / 当前视图钮 / 表头字 */
+  --primary-soft: #bcdcf7;   /* Treeview 选中底 */
+  --accent: #f4813a;         /* ACCENT2 次强调（画布多边形描边） */
+  --accent-2: #f4813a;
+  --primary-glow: rgba(13, 127, 214, 0.16);
+  --text-primary: #16273a;   /* FG */
+  /* 桌面只有 FG/FG_DIM 两级，Web 用了三级；中间层取偏 FG 侧，
+     直接映 FG_DIM 会让大片正文偏淡。 */
+  --text-secondary: #33475e;
+  --text-muted: #68798d;     /* FG_DIM */
+
+  /* ---- 桌面有、agent 主题没有的语义色 ---- */
+  --lf-panel2: #e3ebf5;
+  --lf-hover: #3fa1ea;       /* Accent 按钮 hover (app.py:459-463) */
+  --lf-sel: #bcdcf7;         /* Treeview 选中底 (app.py:452) */
+  --lf-ok: #12a150;          /* OK */
+  --lf-err: #e5484d;         /* ERR */
+  --lf-warn-bg: #ffcc80;     /* 日志 warn 底色 (app.py:4281) */
+  --lf-warn-fg: #8a5a00;     /* 亮底上要反转前景色，否则读不清 */
+  --lf-log-bg: #eef2f8;
+
+  /* ---- 坡脚画布（app.py:1706 / 1819 的两块填色，桌面是写死在 create_* 里的） ---- */
+  --lf-foot-fill: #ffe6cc;   /* 坡脚多边形填充（描边用 --accent） */
+  --lf-crest-fill: #dbeafe;  /* 平台（坡顶）轮廓填充，虚线描边用 --primary */
+
+  /* ---- 开挖分区填充循环 (app.py:237-238) ---- */
+  --lf-zone-1: #bbdefb;
+  --lf-zone-2: #c8e6c9;
+  --lf-zone-3: #ffe0b2;
+  --lf-zone-4: #f8bbd0;
+  --lf-zone-5: #d1c4e9;
+  --lf-zone-6: #b2dfdb;
+  --lf-zone-7: #ffccbc;
+
+  /* ---- three.js 场景（查看器从挂载元素的这几项读，不要用 --bg-base） ---- */
+  --scene-bg: #eef2f8;
+  --scene-grid: #c3d0e0;
+  --scene-grid-2: #dbe4ee;
+
+  /* ---- 字体：桌面用 Microsoft YaHei UI ---- */
+  font-family: 'Microsoft YaHei UI', 'Microsoft YaHei', 'PingFang SC',
+               system-ui, sans-serif;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background-color: var(--bg-base);
+}
+
+/* 桌面正文 9pt ≈ 12px；分组标题 10pt bold；品牌标题 14pt bold */
+.lf-light .lf-group-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+}
+.lf-light .lf-brand-title { font-size: 18px; font-weight: 700; }
+.lf-light .lf-mono,
+.lf-light .lf-log {
+  font-family: Consolas, 'JetBrains Mono', 'SF Mono', monospace;
+}
+
+/* --------------------------------------------------------------------------
+   作用域内覆盖三处全局规则 —— 否则亮色面板里滚动条/选中/焦点环仍按深色走
+   -------------------------------------------------------------------------- */
+.lf-light ::-webkit-scrollbar-thumb { background: var(--border); }
+.lf-light ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+.lf-light ::selection { background: #bcdcf7; color: #16273a; }
+.lf-light :focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+
+/* --------------------------------------------------------------------------
+   组件小类（内联 style 能表达的就不放这里，只放重复三次以上的）
+   -------------------------------------------------------------------------- */
+/* 工具栏 / 状态栏 / 表头：桌面 PANEL2 底 + 1px BORDER */
+.lf-light .lf-bar {
+  background: var(--lf-panel2);
+  border-bottom: 1px solid var(--border);
+}
+.lf-light .lf-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+
+/* 普通按钮：白底细边框，hover 转亮蓝描边 */
+.lf-light .lf-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  font-size: 12px;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .12s, border-color .12s, color .12s;
+}
+.lf-light .lf-btn:hover { background: #f4f8fd; border-color: var(--lf-hover); }
+.lf-light .lf-btn:active { background: var(--lf-sel); }
+.lf-light .lf-btn[disabled] { opacity: .45; cursor: not-allowed; }
+.lf-light .lf-btn[disabled]:hover { background: var(--bg-surface); border-color: var(--border); }
+
+/* Accent 按钮：桌面「▶ 执行建模」= 蓝底白字，hover #3fa1ea */
+.lf-light .lf-accent {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  font-weight: 700;
+}
+.lf-light .lf-accent:hover { background: var(--lf-hover); border-color: var(--lf-hover); }
+.lf-light .lf-accent[disabled] { background: var(--primary); }
+
+/* 分组标题栏（桌面 LabelFrame：白底 + 1px BORDER + ACCENT 字） */
+.lf-light .lf-frame {
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg-surface);
+  padding: 6px 8px 8px;
+}
+.lf-light .lf-frame > legend,
+.lf-light .lf-frame-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  padding: 0 4px;
+}
+
+/* 页签（左栏顶层页签 / 计算页子页签 / 结果条两页签） */
+.lf-light .lf-tab {
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--text-primary);
+  background: var(--lf-panel2);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 3px 3px 0 0;
+  cursor: pointer;
+}
+.lf-light .lf-tab-on {
+  background: var(--bg-surface);
+  color: var(--primary);
+  font-weight: 700;
+}
+
+/* 输入控件 */
+.lf-light .lf-input {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-size: 12px;
+  color: var(--text-primary);
+  min-width: 0;
+}
+.lf-light .lf-input:focus { border-color: var(--primary); outline: none; }
+.lf-light select.lf-input { cursor: pointer; }
+
+/* 结果表（桌面 Treeview 等价物）：表头 PANEL2 底 + ACCENT 字 + 行高 30 */
+.lf-light .lf-table { border-collapse: collapse; width: 100%; font-size: 12px; }
+.lf-light .lf-table th {
+  background: var(--lf-panel2);
+  color: var(--primary);
+  font-weight: 700;
+  text-align: left;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  white-space: nowrap;
+}
+.lf-light .lf-table td {
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  height: 30px;
+  white-space: nowrap;
+}
+.lf-light .lf-table tbody tr:nth-child(even) { background: #f7fafd; }
+.lf-light .lf-table tbody tr:hover { background: #eaf3fc; }
+.lf-light .lf-table tbody tr.lf-row-sel { background: var(--lf-sel); }
+
+/* 日志分级着色（桌面 app.py:4280-4287） */
+.lf-light .lf-log-info { color: var(--text-primary); }
+.lf-light .lf-log-ok { color: var(--lf-ok); }
+.lf-light .lf-log-warn { color: var(--lf-warn-fg); background: var(--lf-warn-bg); }
+.lf-light .lf-log-err { color: var(--lf-err); }
+
+/* 状态栏左段：ACCENT 字色 */
+.lf-light .lf-status { color: var(--primary); }
+
+/* 主视图按钮条：选中态蓝底白字（桌面 Seg.TButton 的 Accent 样式） */
+.lf-light .lf-viewbtn {
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.lf-light .lf-viewbtn:hover { border-color: var(--lf-hover); }
+.lf-light .lf-viewbtn-on {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  font-weight: 700;
+}
+/* 子视图条的小钮 */
+.lf-light .lf-subbtn {
+  padding: 2px 8px;
+  font-size: 11px;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.lf-light .lf-subbtn:hover { border-color: var(--lf-hover); }
+.lf-light .lf-subbtn-on {
+  background: var(--lf-sel);
+  border-color: var(--primary);
+  color: var(--primary);
+  font-weight: 700;
+}
+
+/* 灰色提示文字（桌面 Dim.TLabel） */
+.lf-light .lf-dim { color: var(--text-muted); font-size: 11px; }
+
+/* 折叠按钮（桌面 ◀ 隐藏左栏 / ▣ 隐藏结果） */
+.lf-light .lf-fold {
+  padding: 3px 8px;
+  font-size: 11px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  color: var(--text-primary);
+}
+.lf-light .lf-fold:hover { border-color: var(--lf-hover); }
+
+/* 弹层容器（多边形画布 / 开挖分区画布 / 帮助关于）。
+   单独给一个类名而不是靠 .fixed 定位 —— 页面根节点本身就是 fixed，
+   选择器会误伤（浏览器验证脚本踩过这个坑）。 */
+.lf-light .lf-modal {
+  background: rgba(22, 39, 58, 0.45);
+  backdrop-filter: blur(1px);
+}

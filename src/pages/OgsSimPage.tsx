@@ -231,19 +231,15 @@ export default function OgsSimPage() {
                   {result.ok && (result.scenario === 'settlement' || result.scenario === 'gas-production') && (
                     <button
                       onClick={() => {
-                        try {
-                          sessionStorage.setItem('scene-ogs', JSON.stringify({
-                            kind: 'ogs', scenario: result.scenario, scenarioName: result.scenarioName,
-                            timeSeries: result.timeSeries, ts: Date.now(),
-                          }));
-                        } catch { /* ignore */ }
-                        navigate('/3d-simulator');
+                        // v5.3：经典风格化 3D 场景已退役；时程曲线就在本页下方，
+                        // 故不再跳转（原来这里会导航到 /3d-simulator 的示意场景）
+                        console.info('[OgsSim] 时程已生成，曲线见本页时间序列图');
                       }}
                       className="text-[10px] px-2.5 py-1 rounded-full border flex items-center gap-1 transition-colors"
                       style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
-                      title={result.scenario === 'settlement' ? '沉降时程驱动 3D 堆体下沉' : '产气强度驱动 3D 火炬'}
+                      title="时程曲线已在本页下方的时间序列图中"
                     >
-                      <Box size={11} /> 在 3D 中查看
+                      <Box size={11} /> 时程已生成
                     </button>
                   )}
                   <span className="text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>

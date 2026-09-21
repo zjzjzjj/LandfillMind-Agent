@@ -170,7 +170,7 @@ async function buildGeo3d(intent: ModelIntent, reuseOgs?: OgsSource | null): Pro
       snapshot: built.snapshot,
       ogSummary: built.ogSummary ?? null,
     },
-    navigateTo: '/3d-simulator',
+    navigateTo: '/tool',
     ok: true,
   };
 }
@@ -186,7 +186,7 @@ async function buildOgs(text: string, reuse?: OgsSource | null): Promise<ModelBu
       title: KIND_TITLE.ogs,
       summary: reuse.result.summary ?? '',
       payload: reuse.result as unknown as Record<string, unknown>,
-      navigateTo: '/3d-simulator',
+      navigateTo: '/tool',
       ok: reuse.result.ok ?? false,
     };
   }
@@ -196,7 +196,7 @@ async function buildOgs(text: string, reuse?: OgsSource | null): Promise<ModelBu
     title: KIND_TITLE.ogs,
     summary: r.summary ?? '',
     payload: r as unknown as Record<string, unknown>,
-    navigateTo: '/3d-simulator',
+    navigateTo: '/tool',
     ok: r.ok,
   };
 }

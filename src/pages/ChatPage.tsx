@@ -5,7 +5,6 @@ import type { Message, ToolCall, Agent, ModelOption, PermissionMode, FollowUpIte
 import { useDetailPref } from '../utils/detailPref';
 import { buildChatMarkdown, downloadJSON, downloadText, timestampName } from '../utils/exporter';
 import { FeedbackWidget } from '../components/FeedbackWidget';
-import { SCENE_BUILT_KEY, writeSceneBuilt } from '../components/LandfillScene3D/geo';
 
 // ========================
 // 知识库检索增强 / 工程计算内核 卡片
@@ -32,22 +31,24 @@ const ORIGIN_LABEL: Record<string, string> = {
 };
 
 function ToolCallCard({ tc }: { tc: ToolCall }) {
-  // scene（AI 生成 3D 场景）/ model（智能体建模中枢）默认展开——核心演示功能
-  const kind: 'kb' | 'calc' | 'ogs' | 'scene' | 'model' | 'diagnosis' | 'deep' | 'report' = tc.type
+  // scene（AI 生成 3D 场景）/ model（智能体建模中枢）/ kernel（权威内核）默认展开——核心演示功能
+  const kind: 'kb' | 'calc' | 'ogs' | 'scene' | 'kernel' | 'model' | 'diagnosis' | 'deep' | 'report' = tc.type
     ?? (tc.name === 'buildScene' ? 'scene'
       : tc.name === 'buildModel' ? 'model'
       : tc.name === 'kb_lookup' ? 'kb'
       : tc.name === 'ogs_sim' || tc.name === 'run_ogs_scenario' ? 'ogs'
+      : tc.name === 'run_3d_kernel' ? 'kernel'
       : tc.name === 'calculate' || tc.name === 'run_diagnosis' || tc.name === 'analyze_site' ? 'calc'
       : tc.name === 'deep_analysis' ? 'deep'
       : 'kb');
-  const [open, setOpen] = useState(() => kind === 'scene' || kind === 'model');
+  const [open, setOpen] = useState(() => kind === 'scene' || kind === 'model' || kind === 'kernel');
   const statusColor = tc.status === 'success' ? '#10b981' : tc.status === 'error' ? '#ef4444' : '#06b6d4';
 
   // 标题与图标按类型分类
   const headerLabel = kind === 'kb' ? '🔍 知识库检索增强'
     : kind === 'ogs' ? '🌐 稳定化计算（OpenGeoSys 求解）'
     : kind === 'scene' ? '🏗 AI 生成 3D 场景'
+    : kind === 'kernel' ? '🧊 权威内核（Landfill 3D Tool）'
     : kind === 'model' ? '🧠 智能体建模中枢'
     : kind === 'diagnosis' ? '⚠ 场地风险诊断（双引擎）'
     : kind === 'deep' ? '🧠 多智能体深度分析'
@@ -79,6 +80,11 @@ function ToolCallCard({ tc }: { tc: ToolCall }) {
   // AI 生成 3D 场景输出：BuiltScene（geo / preset / snapshot / ogSummary）
   let sceneResult: any = null;
   if (kind === 'scene' && payload !== undefined) sceneResult = payload;
+
+  // 权威内核输出：会话模式 { action, summary, stamp, data, figures, sceneHint, reportUrl }
+  //                 或旧 module 快查模式 { stamp, result... }
+  let kernelResult: any = null;
+  if (kind === 'kernel' && payload !== undefined && payload && typeof payload === 'object') kernelResult = payload;
 
   // 建模中枢输出（旧会话兼容）：ModelBuilt（kind / title / summary / payload）
   let modelResult: any = null;
@@ -196,13 +202,13 @@ function ToolCallCard({ tc }: { tc: ToolCall }) {
                             timeSeries: ogsResult.timeSeries, ts: Date.now(),
                           }));
                         } catch { /* ignore */ }
-                        window.open('/3d-simulator', '_blank');
+                        window.open('/ogs-sim', '_blank');
                       }}
                       className="text-[10px] px-2.5 py-1 rounded-full border transition-colors"
                       style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
-                      title={ogsResult.scenario === 'settlement' ? '沉降时程驱动 3D 堆体下沉' : '产气强度驱动 3D 火炬'}
+                      title={ogsResult.scenario === 'settlement' ? '沉降时程（稳定化计算页）' : '产气时程（稳定化计算页）'}
                     >
-                      🏔 在 3D 中查看
+                      📈 查看时程曲线
                     </button>
                   )}
                 </div>
@@ -223,25 +229,149 @@ function ToolCallCard({ tc }: { tc: ToolCall }) {
                       <span className="font-mono">{sceneResult.ogSummary.peakValue}{sceneResult.ogSummary.unit}</span>
                     </p>
                   )}
-                  <button
-                    onClick={() => {
-                      try {
-                        writeSceneBuilt({
-                          geo: sceneResult.geo,
-                          preset: sceneResult.preset,
-                          snapshot: sceneResult.snapshot,
-                          ogSummary: sceneResult.ogSummary,
-                          navigateTo: '/3d-simulator',
-                        });
-                      } catch { /* ignore */ }
-                      window.open('/3d-simulator', '_blank');
-                    }}
-                    className="text-[10px] px-2.5 py-1 rounded-full border transition-colors"
-                    style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
-                    title="按 AI 生成的参数跳转三维仿真器渲染"
-                  >
-                    🏔 打开 3D 仿真器 →
-                  </button>
+                </div>
+              )}
+
+              {/* 权威内核（Landfill 3D Tool）：会话模式 = 结论/口径/表格/图/简报/示意图场景 */}
+              {kind === 'kernel' && kernelResult && (
+                <div className="space-y-1.5">
+                  {kernelResult.action ? (
+                    <>
+                      {kernelResult.summary && (
+                        <pre className="text-[11px] font-mono whitespace-pre-wrap rounded-lg p-2"
+                             style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text-secondary)' }}>
+                          {kernelResult.summary}
+                        </pre>
+                      )}
+                      <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+                        {kernelResult.stamp && (
+                          <span className="chip" style={{ color: 'var(--text-muted)' }}>
+                            内核 v{kernelResult.stamp.version} · 口径 {kernelResult.stamp.physics}/{kernelResult.stamp.kernel}
+                          </span>
+                        )}
+                        {run?.grade && (
+                          <span className="chip" style={{ color: MODEL_GRADE_COLOR[run.grade] ?? 'var(--text-secondary)', fontWeight: 700 }}>
+                            {run.grade === 'red' ? '● 不满足/高风险' : run.grade === 'yellow' ? '● 需关注' : run.grade === 'green' ? '● 满足' : String(run.grade)}
+                          </span>
+                        )}
+                        {typeof run?.elapsedMs === 'number' && (
+                          <span className="chip" style={{ color: 'var(--text-muted)' }}>耗时 {(run.elapsedMs / 1000).toFixed(1)}s</span>
+                        )}
+                        {kernelResult.action === 'model' && (
+                          <span className="chip" style={{ color: 'var(--primary)' }}>会话模型已就绪，可直接追问稳定性/沉降/污染分析</span>
+                        )}
+                      </div>
+                      {/* 结果表（扫描表 / 污染五段表 / 开挖综合表通用形状 cols+rows） */}
+                      {kernelResult.data?.table?.rows?.length > 0 && (
+                        <div className="overflow-x-auto rounded-lg border" style={{ borderColor: 'var(--border)' }}>
+                          <table className="w-full text-[10px]">
+                            {Array.isArray(kernelResult.data.table.cols) && (
+                              <thead>
+                                <tr style={{ backgroundColor: 'var(--bg-input)' }}>
+                                  {kernelResult.data.table.cols.map((c: unknown, i: number) => (
+                                    <th key={i} className="px-2 py-1 text-left font-semibold whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>{String(c)}</th>
+                                  ))}
+                                </tr>
+                              </thead>
+                            )}
+                            <tbody>
+                              {kernelResult.data.table.rows.slice(0, 16).map((r: unknown, ri: number) => (
+                                <tr key={ri} style={{ borderTop: '1px solid var(--border)' }}>
+                                  {(Array.isArray(r) ? r : [r]).map((cell, ci) => (
+                                    <td key={ci} className="px-2 py-1 font-mono" style={{ color: 'var(--text-secondary)' }}>
+                                      {cell == null ? '' : typeof cell === 'number' ? +cell.toFixed(3) : String(cell)}
+                                    </td>
+                                  ))}
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                          {kernelResult.data.table.rows.length > 16 && (
+                            <p className="px-2 py-1 text-[9px]" style={{ color: 'var(--text-muted)' }}>
+                              仅显示前 16 / {kernelResult.data.table.rows.length} 行，完整表格见对话正文与简报
+                            </p>
+                          )}
+                        </div>
+                      )}
+                      {/* 关键数字（污染 key_numbers 等嵌套对象平铺） */}
+                      {kernelResult.data?.key_numbers && (() => {
+                        const leaves: Array<[string, unknown]> = [];
+                        const walk = (o: any, p: string) => {
+                          for (const [k, v] of Object.entries(o ?? {})) {
+                            if (v && typeof v === 'object' && !Array.isArray(v)) walk(v, p + k + '.');
+                            else if (v != null && leaves.length < 16) leaves.push([p + k, v]);
+                          }
+                        };
+                        walk(kernelResult.data.key_numbers, '');
+                        return (
+                          <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px] font-mono" style={{ color: 'var(--text-secondary)' }}>
+                            {leaves.map(([k, v]) => (
+                              <div key={k} className="flex justify-between gap-2 min-w-0">
+                                <span className="truncate" style={{ color: 'var(--text-muted)' }} title={k}>{k}</span>
+                                <span className="whitespace-nowrap">{typeof v === 'number' ? (Math.abs(v) >= 100 ? v.toFixed(0) : v.toFixed(2)) : String(v)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                      {/* 内核准确结果图（点击看原图） */}
+                      {Array.isArray(kernelResult.figures) && kernelResult.figures.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {kernelResult.figures.map((f: any) => (
+                            <a key={f.url} href={f.url} target="_blank" rel="noreferrer" title={f.label}>
+                              <img src={f.url} alt={f.label} loading="lazy"
+                                   className="rounded-lg border max-h-40 object-contain"
+                                   style={{ borderColor: 'var(--border)' }} />
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                      {(kernelResult.sceneHint || kernelResult.reportUrl || kernelResult.action) && (
+                        <div className="flex flex-wrap gap-2 pt-0.5">
+                          {kernelResult.action && (
+                            <button
+                              onClick={() => window.open('/3d-simulator', '_blank')}
+                              className="text-[10px] px-2.5 py-1 rounded-full border transition-colors"
+                              style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
+                              title="真实三维模型查看器：直接渲染内核场地的顶面/坡面/基底网格，可旋转、剖切、开关图层"
+                            >
+                              🏔 真实三维模型 →
+                            </button>
+                          )}
+                          <button
+                            onClick={() => window.open('/tool', '_blank')}
+                            className="text-[10px] px-2.5 py-1 rounded-full border transition-colors"
+                            style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+                            title="打开三维建模分析页（桌面工具同款布局：建模/库容/坡度/剖面/沉降/稳定性/污染/开挖，含真实三维网格与叠加层）"
+                          >
+                            🧰 三维建模分析
+                          </button>
+                          {kernelResult.reportUrl && (
+                            <a
+                              href={`${kernelResult.reportUrl}?dl=1`}
+                              className="text-[10px] px-2.5 py-1 rounded-full border transition-colors inline-block"
+                              style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
+                            >
+                              ⬇ 分析简报
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    /* 旧 module 快查模式（示例场）：stamp + 原生结果 JSON 预览 */
+                    <div className="space-y-1">
+                      {kernelResult.stamp && (
+                        <span className="chip text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                          示例场快查 · 口径 {kernelResult.stamp.physics}/{kernelResult.stamp.kernel}
+                        </span>
+                      )}
+                      <pre className="text-[10px] font-mono whitespace-pre-wrap rounded-lg p-2 overflow-x-auto"
+                           style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text-secondary)', maxHeight: 200 }}>
+                        {JSON.stringify(kernelResult, null, 1).slice(0, 1200)}
+                      </pre>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -376,29 +506,6 @@ function ToolCallCard({ tc }: { tc: ToolCall }) {
                       {modelResult.payload.snapshot.desc}
                     </pre>
                   )}
-                  {modelResult.kind === 'geo3d' && (
-                    <button
-                      onClick={() => {
-                        try {
-                          writeSceneBuilt({
-                            geo: modelResult.payload.geo,
-                            preset: modelResult.payload.preset,
-                            snapshot: modelResult.payload.snapshot,
-                            ogSummary: modelResult.payload.ogSummary ?? undefined,
-                            navigateTo: '/3d-simulator',
-                          });
-                        } catch { /* ignore */ }
-                        window.open('/3d-simulator', '_blank');
-                      }}
-                      className="text-[10px] px-2.5 py-1 rounded-full border transition-colors"
-                      style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
-                      title="按 AI 生成的参数跳转三维仿真器渲染"
-                    >
-                      🏔 打开 3D 仿真器 →
-                    </button>
-                  )}
-
-                  {/* ogs：稳定化数值结果 + 在 3D 中查看 */}
                   {modelResult.kind === 'ogs' && modelResult.payload?.scenarioName && (
                     <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
                       场景：<span className="font-mono">{modelResult.payload.scenarioName}</span>
@@ -411,20 +518,12 @@ function ToolCallCard({ tc }: { tc: ToolCall }) {
                   )}
                   {modelResult.kind === 'ogs' && (modelResult.payload?.scenario === 'settlement' || modelResult.payload?.scenario === 'gas-production') && (
                     <button
-                      onClick={() => {
-                        try {
-                          sessionStorage.setItem('scene-ogs', JSON.stringify({
-                            kind: 'ogs', scenario: modelResult.payload.scenario, scenarioName: modelResult.payload.scenarioName,
-                            timeSeries: modelResult.payload.timeSeries, ts: Date.now(),
-                          }));
-                        } catch { /* ignore */ }
-                        window.open('/3d-simulator', '_blank');
-                      }}
+                      onClick={() => window.open('/ogs-sim', '_blank')}
                       className="text-[10px] px-2.5 py-1 rounded-full border transition-colors"
                       style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
-                      title="OGS 时程驱动 3D 场景"
+                      title="到稳定化计算页查看时程曲线"
                     >
-                      🏔 在 3D 中查看
+                      📈 查看时程曲线
                     </button>
                   )}
 

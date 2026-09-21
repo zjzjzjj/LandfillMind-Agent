@@ -28,6 +28,7 @@ import { SafetyFactorGauge } from '../components/SafetyFactorGauge';
 import { HistogramChart } from '../components/HistogramChart';
 import TimeSeriesChart, { seriesColor } from '../components/TimeSeriesChart';
 import { PRESETS, PRESET_LABELS, applyPreset, suggestVaryParam, estimateCost, type PresetName } from '../utils/calcPresets';
+import { widePx } from '../utils/layout';
 
 /** 联动跳转小按钮 */
 function LinkChip({ label, onClick }: { label: string; onClick: () => void }) {
@@ -501,8 +502,8 @@ export default function DesignPage() {
     <div className="flex h-full w-full" style={{ backgroundColor: 'var(--bg-base)' }}>
       {/* 左侧 240px 固定栏：计算器列表 */}
       <aside
-        className="flex-shrink-0 flex flex-col overflow-hidden"
-        style={{ width: 240, backgroundColor: 'var(--bg-surface)', borderRight: '1px solid var(--border)' }}
+        className="flex-shrink-0 flex flex-col overflow-hidden w-[240px] 3xl:w-[272px]"
+        style={{ backgroundColor: 'var(--bg-surface)', borderRight: '1px solid var(--border)' }}
       >
         <div className="px-3 py-3 border-b shrink-0" style={{ borderColor: 'var(--border)' }}>
           <div className="flex items-center gap-2 mb-2">
@@ -565,7 +566,7 @@ export default function DesignPage() {
         <div className="flex items-center gap-3 px-6 py-3 border-b shrink-0" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-surface)' }}>
           <div className="flex items-center gap-2 min-w-0">
             <Sliders size={14} style={{ color: 'var(--primary)' }} />
-            <span className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+            <span className="text-sm 3xl:text-base font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
               {selected === COMPARE_ID ? '场景对比' :
                selected === MONTE_ID ? '蒙特卡洛风险评估' :
                selected === COST_ID ? '运营成本估算' :
@@ -612,7 +613,7 @@ export default function DesignPage() {
 
         {/* 内容 */}
         <div className="flex-1 overflow-y-auto">
-          <div className="max-w-5xl mx-auto px-6 py-6 pb-24 space-y-5">
+          <div className="max-w-5xl 3xl:max-w-[1560px] mx-auto px-6 3xl:px-8 py-6 pb-24 space-y-5">
             {selected === COMPARE_ID ? (
               <CompareModeFull scenarios={compareScenarios} setScenarios={setCompareScenarios} result={compareResult} calcName={guessCalcId(compareScenarios[0]?.params ?? {})} />
             ) : selected === MONTE_ID ? (
@@ -704,7 +705,7 @@ function SingleModeFull(props: {
   return (
     <>
       {/* 1+2. 两栏：参数输入（左）+ 计算结果（右） */}
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] gap-4 3xl:gap-6">
         <Card title="参数输入" icon={<Sliders size={13} />} hint="修改后点「立即计算」">
           <div className="space-y-2">
             {defs.map(p => (
@@ -775,7 +776,7 @@ function SingleModeFull(props: {
                   <span className="w-2 h-2 rounded-full" style={{ backgroundColor: seriesColor(s.varName) }} />
                   {s.name}{s.unit ? `（${s.unit}）` : ''}
                 </p>
-                <TimeSeriesChart series={s} height={160} />
+                <TimeSeriesChart series={s} height={widePx(160, 200)} />
               </div>
             ))}
           </div>
@@ -849,7 +850,7 @@ function SingleModeFull(props: {
                 baseValue={sensitivity.baseValue}
                 unit={typeof result.value === 'number' ? (result.unit ?? '') : ''}
                 refLine={isFs ? 1.30 : undefined}
-                height={180}
+                height={widePx(180, 220)}
               />
               <div className="mt-2 text-[10px] font-mono flex items-center gap-3" style={{ color: 'var(--text-muted)' }}>
                 <span>基准：{sensitivity?.baseX?.toFixed(2)} → {typeof result.value === 'number' ? result.value.toFixed(2) : ''}{isFs ? ' (Fs)' : ''}</span>
@@ -907,12 +908,12 @@ function ParamField({ param, value, onChange }: { param: NonNullable<typeof PARA
     return (
       <div>
         <label className="flex items-center justify-between mb-0.5">
-          <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>{param.label}</span>
+          <span className="text-[11px] 3xl:text-xs" style={{ color: 'var(--text-secondary)' }}>{param.label}</span>
         </label>
         <select
           value={String(value ?? param.default ?? '')}
           onChange={e => onChange(e.target.value)}
-          className="w-full text-xs px-2 py-1 rounded outline-none border"
+          className="w-full text-xs 3xl:text-sm px-2 py-1 rounded outline-none border"
           style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text-primary)' }}
         >
           {(param.options ?? []).map(o => <option key={o} value={o}>{o}</option>)}
@@ -924,8 +925,8 @@ function ParamField({ param, value, onChange }: { param: NonNullable<typeof PARA
   return (
     <div>
       <label className="flex items-center justify-between mb-0.5">
-        <span className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>{param.label}</span>
-        {param.unit && <span className="text-[9px] font-mono" style={{ color: 'var(--text-muted)' }}>{param.unit}</span>}
+        <span className="text-[11px] 3xl:text-xs" style={{ color: 'var(--text-secondary)' }}>{param.label}</span>
+        {param.unit && <span className="text-[9px] 3xl:text-[11px] font-mono" style={{ color: 'var(--text-muted)' }}>{param.unit}</span>}
       </label>
       <input
         type="number"
@@ -1003,7 +1004,7 @@ function Card({ title, icon, hint, collapsible, expanded, onToggle, children }: 
     <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-surface)' }}>
       <div className="px-4 py-2.5 border-b flex items-center gap-2" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-elevated)' }}>
         {icon && <span style={{ color: 'var(--primary)' }}>{icon}</span>}
-        <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>{title}</span>
+        <span className="text-xs 3xl:text-sm font-bold uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>{title}</span>
         {hint && !collapsible && <span className="text-[10px] ml-auto" style={{ color: 'var(--text-muted)' }}>{hint}</span>}
         {collapsible && (
           <button onClick={onToggle} className="ml-auto p-0.5" style={{ color: 'var(--text-muted)' }} title={expanded ? '收起' : '展开'}>
@@ -1157,7 +1158,7 @@ function MonteCarloFull({ params, setParams, preset, result, calcId = 'slopeFs',
       </Card>
       {result && (
         <Card title={`Fs 分布（${result.iterations} 次）`} icon={<Sparkles size={13} />}>
-          <HistogramChart samples={result.samples} bins={28} threshold={{ value: 1.30, op: '<', color: '#dc2626' }} height={200} />
+          <HistogramChart samples={result.samples} bins={28} threshold={{ value: 1.30, op: '<', color: '#dc2626' }} height={widePx(200, 240)} />
           <div className="mt-3 pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
             <div className="text-[10px] mb-1" style={{ color: 'var(--text-muted)' }}>失败概率 P(Fs &lt; 1.30)</div>
             <div className="flex items-baseline gap-2">

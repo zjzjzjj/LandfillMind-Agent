@@ -4,7 +4,7 @@ import { Plus, Settings, Stethoscope, Calculator, MessageCircle, BrainCircuit, X
 import logoImg from '../assets/logo/landfillmind-logo.png';
 import type { Agent, Session } from '../types';
 
-interface SidebarProps { sessions: Session[]; currentSessionId: string | null; isSettingsPage: boolean; isDiagnosePage: boolean; isDesignPage: boolean; isMultiAgentPage: boolean; isSimulatorPage: boolean; isOgsSimPage: boolean; sidebarOpen: boolean; agents: Agent[]; getAgent: (id: string) => Agent | undefined; onNewChat: () => void; onSelectSession: (sessionId: string) => void; onDeleteSession: (sessionId: string) => void; onOpenSettings: () => void; onOpenDiagnose: () => void; onOpenDesign: () => void; onOpenMultiAgent: () => void; onOpenSimulator: () => void; onOpenOgsSim: () => void; onOpenAdmin: () => void; }
+interface SidebarProps { sessions: Session[]; currentSessionId: string | null; isSettingsPage: boolean; isDiagnosePage: boolean; isDesignPage: boolean; isMultiAgentPage: boolean; isOgsSimPage: boolean; sidebarOpen: boolean; agents: Agent[]; getAgent: (id: string) => Agent | undefined; onNewChat: () => void; onSelectSession: (sessionId: string) => void; onDeleteSession: (sessionId: string) => void; onOpenSettings: () => void; onOpenDiagnose: () => void; onOpenDesign: () => void; onOpenMultiAgent: () => void; onOpenOgsSim: () => void; onOpenTool: () => void; onOpenAdmin: () => void; }
 interface NavItemProps { icon: React.ReactNode; label: string; active: boolean; onClick: () => void; badge?: string; }
 
 function NavItem({ icon, label, active, onClick, badge }: NavItemProps) {
@@ -29,7 +29,7 @@ function SessionItem({ session, isActive, onSelect, onDelete }: { session: Sessi
   );
 }
 
-export function Sidebar({ sessions, currentSessionId, isSettingsPage, isDiagnosePage, isDesignPage, isMultiAgentPage, isSimulatorPage, isOgsSimPage, sidebarOpen, agents, onNewChat, onSelectSession, onDeleteSession, onOpenSettings, onOpenDiagnose, onOpenDesign, onOpenMultiAgent, onOpenSimulator, onOpenOgsSim, onOpenAdmin }: SidebarProps) {
+export function Sidebar({ sessions, currentSessionId, isSettingsPage, isDiagnosePage, isDesignPage, isMultiAgentPage, isOgsSimPage, sidebarOpen, agents, onNewChat, onSelectSession, onDeleteSession, onOpenSettings, onOpenDiagnose, onOpenDesign, onOpenMultiAgent, onOpenOgsSim, onOpenTool, onOpenAdmin }: SidebarProps) {
   const [chatHover, setChatHover] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -52,7 +52,10 @@ export function Sidebar({ sessions, currentSessionId, isSettingsPage, isDiagnose
           <NavItem icon={<MessageCircle size={15} />} label="智能体对话" active={false} onClick={onNewChat} />
           <NavItem icon={<BrainCircuit size={15} />} label="多智能体" active={isMultiAgentPage} onClick={onOpenMultiAgent} />
           <NavItem icon={<Stethoscope size={15} />} label="AI 快诊" active={isDiagnosePage} onClick={onOpenDiagnose} />
-          <NavItem icon={<Boxes size={15} />} label="3D 模拟" active={isSimulatorPage} onClick={onOpenSimulator} />
+          {/* v5.3：原「3D 模拟（真实模型）」与「3D 建模工具」两个入口合并为一行
+              —— 它们渲染的是同一份会话几何（model.obj），是重复入口而非互补功能。
+              合并后的页面同时是查看器与建模分析工作台，与桌面工具同名。 */}
+          <NavItem icon={<Boxes size={15} />} label="三维建模分析" active={false} onClick={onOpenTool} />
           <NavItem icon={<FlaskConical size={15} />} label="稳定化计算" active={isOgsSimPage} onClick={onOpenOgsSim} />
           {/* v5：计算中心降级为附属工具库（主链路走对话内 calculate 工具） */}
           <NavItem icon={<Calculator size={15} />} label="计算工具库" active={isDesignPage} onClick={onOpenDesign} />

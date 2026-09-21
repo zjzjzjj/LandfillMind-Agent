@@ -71,12 +71,13 @@ function formatParams(params: Array<{ label: string; value: unknown; unit?: stri
   ).join('\n');
 }
 
-function parseResult(json: string): { summary: string; warnings: string[] } {
+function parseResult(json: string): { summary: string; warnings: string[]; stamp?: Record<string, string> } {
   try {
     const r = JSON.parse(json);
     return {
       summary: typeof r.summary === 'string' ? r.summary : '',
       warnings: Array.isArray(r.warnings) ? r.warnings.map(String) : [],
+      stamp: r.stamp && typeof r.stamp === 'object' ? r.stamp : undefined,
     };
   } catch { return { summary: '', warnings: [] }; }
 }
@@ -105,7 +106,9 @@ export function generateReport(input: ReportInput = {}): EngineeringReport | nul
       grade: r.grade,
       elapsedMs: r.elapsed_ms,
       paramsText: formatParams(params),
-      resultSummary: res.summary,
+      resultSummary: [(res as any).stamp
+        ? `[口径落章] physics=${(res as any).stamp.physics ?? '?'} · kernel=${(res as any).stamp.kernel ?? '?'} · v${(res as any).stamp.version ?? '?'}`
+        : '', res.summary].filter(Boolean).join('\n'),
       warnings: res.warnings,
     };
   });

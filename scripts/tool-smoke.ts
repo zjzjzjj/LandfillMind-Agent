@@ -6,6 +6,7 @@
 import { initDb } from '../server/db.js';
 import { execTool, detectRuleToolCall, buildFunctionTools, TOOL_DEFS } from '../server/tools.js';
 import { generateReport } from '../server/report.js';
+import { resolveKernel3dBridge } from '../server/kernel3d.js';
 
 async function main() {
   await initDb();
@@ -13,7 +14,7 @@ async function main() {
   console.log(`已注册工具(${TOOL_DEFS.length}):`, TOOL_DEFS.map(t => t.name).join(', '));
   console.log('function tools schema 生成:', buildFunctionTools().length, '条\n');
 
-  const cases: Array<{ name: string; raw: Record<string, unknown>; expectFail?: boolean }> = [
+  const cases: Array<{ name: string; raw: Record<string, unknown>; expectFail?: boolean; sid?: string }> = [
     { name: 'kb_lookup', raw: { query: '边坡稳定安全系数要求' } },
     { name: 'calculate', raw: { name: 'slopeFs', params: { H: 40, beta: 2.5, phi: 20 } } },
     { name: 'calculate', raw: { name: 'leachateCalc', params: { area: 99999, rainfall: 1200 } } }, // area 越界 → clamp + warning
@@ -28,9 +29,29 @@ async function main() {
     { name: 'deep_analysis', raw: { scenario: '某填埋场运营 15 年，渗滤液水位上升 0.8m，甲烷 35% LEL，堆体裂缝 12m，地下水氯离子 50→280mg/L，请综合评估' } }, // 4 领域真调工具 + 敏感性
   ];
 
+  // —— 三维内核会话模式（自定义场地）：先分析→引导，model→stability→pollution 链
+  if (resolveKernel3dBridge()) {
+    const ksid = `smoke-k3d-${Date.now().toString(36)}`;
+    cases.push(
+      { name: 'run_3d_kernel', sid: ksid, raw: { action: 'stability', params: { n_sections: 3 } }, expectFail: true }, // 未建模 → 引导语
+      {
+        name: 'run_3d_kernel', sid: ksid, raw: {
+          action: 'model', figures: [],
+          spec: { site_name: '冒烟场', shape: 'rect', rect: { L: 300, W: 200 }, height: 30, n: 3.0, grid_nx: 41, layers: [['生活垃圾', 20, 10], ['覆土', 4, 18]] },
+        },
+      },
+      { name: 'run_3d_kernel', sid: ksid, raw: { action: 'stability', params: { c: 8, phi_deg: 25, gamma: 10, ru: 0.2, n_sections: 3, n_grid: 4, n_R: 3, n_slices: 8 } } },
+      { name: 'run_3d_kernel', sid: ksid, raw: { action: 'model', figures: [], spec: { height: 35 } } }, // 增量改模（与上次合并）
+      { name: 'run_3d_kernel', sid: ksid, raw: { action: 'pollution', figures: [], params: { fill_start_year: 2010, fill_end_year: 2015, horizon_years: 10, do_column: false, do_plume: false } } },
+      { name: 'run_3d_kernel', sid: ksid, raw: { action: 'bogus' }, expectFail: true }, // 未知 action → 错误信封
+    );
+  } else {
+    console.log('⚠ 未配置三维内核（KERNEL3D_REPO_PATH / agent_bridge.py），跳过会话模式用例\n');
+  }
+
   let failed = 0;
   for (const c of cases) {
-    const run = await execTool(c.name, c.raw, { sessionId: 'smoke-test' });
+    const run = await execTool(c.name, c.raw, { sessionId: c.sid ?? 'smoke-test' });
     const okMark = run.ok ? '✅' : '❌';
     const params = run.params.map(p => `${p.key}=${p.value}(${p.origin}${p.inRange ? '' : '!RANGE'})`).join(' ');
     console.log(`${okMark} ${c.name} [${run.status}] ${run.elapsedMs}ms`);

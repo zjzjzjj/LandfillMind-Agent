@@ -64,6 +64,10 @@
 - OpenRouter 后台设置消费上限（建议 5-10 美元/月），防止公网 Key 被刷
 - 演示/交付结束后：删除 Render 服务 + 轮换两个 Key（Key 曾出现在聊天记录中）
 - 免费层无持久磁盘：重启/重新部署后历史会话清空，属预期行为
+- **权威内核 `run_3d_kernel` 仅限同机部署**：该工具 spawn 本机 Python 的 Landfill 3D Tool
+  （`KERNEL3D_REPO_PATH/agent_bridge.py`）读写会话工程与分析产物。云端（Render/Docker）镜像内
+  没有该仓库与 Python 环境，工具会返回"未配置三维内核"错误信封（不影响其它 8 个工具与对话功能）；
+  若要在公网环境提供内核能力，需另建常驻 HTTP 微服务包住 agent_bridge.py 并改走网络调用（v5.2 未做）。
 
 ## 6. 常见问题
 | 现象 | 处理 |

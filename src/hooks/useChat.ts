@@ -156,8 +156,8 @@ export function useChat(opts: UseChatOptions) {
               const tc: ToolCall = {
                 id: event.callId ?? uuidv4(),
                 name: event.name,
-                // 后端回放事件会带 kind（'kb'/'calc'/'ogs'/'scene'/'model'/'diagnosis'/'deep'/'report'），CodeBuddy 真 function calling 路径不带
-                type: (event.kind === 'kb' || event.kind === 'calc' || event.kind === 'ogs' || event.kind === 'scene' || event.kind === 'model' || event.kind === 'diagnosis' || event.kind === 'deep' || event.kind === 'report') ? event.kind : undefined,
+                // 后端回放事件会带 kind（'kb'/'calc'/'ogs'/'scene'/'kernel'/'model'/'diagnosis'/'deep'/'report'），CodeBuddy 真 function calling 路径不带
+                type: (['kb', 'calc', 'ogs', 'scene', 'kernel', 'model', 'diagnosis', 'deep', 'report'] as const).includes(event.kind) ? event.kind : undefined,
                 input: event.input ?? {},
                 status: 'running',
               };

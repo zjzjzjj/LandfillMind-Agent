@@ -5,6 +5,7 @@ import { BrainCircuit, Play, ChevronDown, ChevronUp, CheckCircle2, Loader2, XCir
 import type { AgentStatus, ThinkingStep, MAGradeLevel, MADomainFinding, MACrossFinding } from '../types';
 import { buildMultiAgentMarkdown, downloadJSON, downloadText, openPrintableHtml, timestampName } from '../utils/exporter';
 import { useDetailPref } from '../utils/detailPref';
+import { PAGE_MAXW } from '../utils/layout';
 
 interface AgentInfo {
   id: string;
@@ -585,10 +586,10 @@ export default function MultiAgentPage() {
         <div className="hero-blob" style={{ width: 320, height: 320, background: 'rgba(14,165,183,0.5)', bottom: -110, left: -50, animationDelay: '2s' }} />
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.6) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
         <div className="absolute inset-x-0 bottom-0 h-20" style={{ background: 'linear-gradient(to top, var(--bg-base), transparent)' }} />
-        <div className="relative z-10 px-6 py-8 max-w-5xl mx-auto">
+        <div className="relative z-10 px-6 py-8 max-w-5xl mx-auto 3xl:max-w-6xl 3xl:py-12">
           <div className="flex items-center gap-2 mb-3">
             <BrainCircuit size={22} style={{ color: 'var(--primary)' }} />
-            <h1 className="text-xl font-bold" style={{ color: '#ffffff' }}>多智能体协同</h1>
+            <h1 className="text-xl 3xl:text-3xl font-bold" style={{ color: '#ffffff' }}>多智能体协同</h1>
           </div>
           <p className="text-sm mb-5" style={{ color: 'rgba(255,255,255,0.85)' }}>
             5 个专业 Agent 并行推理，覆盖边坡/渗滤液/填埋气/地下水四大维度，思维链全程可见，综合报告一键生成。
@@ -641,7 +642,7 @@ export default function MultiAgentPage() {
                   exit={{ height: 0, opacity: 0 }}
                   className="overflow-hidden"
                 >
-                  <div className="mt-2 grid grid-cols-3 gap-3 max-w-xl">
+                  <div className="mt-2 grid grid-cols-3 gap-3 max-w-xl 3xl:max-w-2xl">
                     {[
                       { label: '堆体高度 H（m，5~60）', value: paramHeight, set: setParamHeight, ph: '25' },
                       { label: '坡角 β（°，10~60）', value: paramAngle, set: setParamAngle, ph: '30' },
@@ -697,7 +698,7 @@ export default function MultiAgentPage() {
       </div>
 
       {/* Agent 卡片网格 */}
-      <div className="max-w-6xl mx-auto px-6 py-6">
+      <div className={`${PAGE_MAXW} px-6 3xl:px-8 py-6`}>
         {agentDashboard && (
           <div
             className="rounded-2xl border p-5 mb-6 overflow-hidden relative"
@@ -710,7 +711,7 @@ export default function MultiAgentPage() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Activity size={16} style={{ color: agentDashboard.overall ? GRADE_COLOR[agentDashboard.overall] : 'var(--text-muted)' }} />
-                <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>综合仪表盘</span>
+                <span className="text-sm 3xl:text-base font-semibold" style={{ color: 'var(--text-primary)' }}>综合仪表盘</span>
                 <span className="text-[11px]" style={{ color: 'var(--text-muted)' }}>4 维度风险等级聚合</span>
                 {crossFindings.length > 0 && (
                   <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full"
@@ -788,7 +789,7 @@ export default function MultiAgentPage() {
 
         {/* "各领域分析" 标题 + 导出按钮（仅结果就绪时显示） */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>各领域分析</h2>
+          <h2 className="text-sm 3xl:text-base font-semibold" style={{ color: 'var(--text-primary)' }}>各领域分析</h2>
           {hasResults && (
             <div className="flex items-center gap-1.5">
               <span className="text-[10px] font-semibold mr-1" style={{ color: 'var(--text-muted)' }}>导出</span>
@@ -822,7 +823,7 @@ export default function MultiAgentPage() {
             </div>
           )}
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 3xl:gap-6">
           {AGENTS.map(agent => (
             <AgentCard
               key={agent.id}
@@ -850,7 +851,7 @@ export default function MultiAgentPage() {
               <div className="p-5">
                 <div className="flex items-center gap-2 mb-3">
                   <CheckCircle2 size={16} style={{ color: 'var(--primary)' }} />
-                  <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>综合诊断报告</h2>
+                  <h2 className="text-sm 3xl:text-base font-semibold" style={{ color: 'var(--text-primary)' }}>综合诊断报告</h2>
                   {agentStates.summary.finding?.keyFinding && (
                     <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{agentStates.summary.finding.keyFinding}</span>
                   )}
@@ -891,7 +892,7 @@ export default function MultiAgentPage() {
                 )}
 
                 <div
-                  className="p-3 rounded-xl text-xs leading-relaxed whitespace-pre-line"
+                  className="p-3 rounded-xl text-xs 3xl:text-sm leading-relaxed whitespace-pre-line"
                   style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-secondary)' }}
                 >
                   {agentStates.summary.result}

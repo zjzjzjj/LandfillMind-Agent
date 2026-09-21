@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
-import { Routes, Route, useNavigate, useParams, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useAgents } from './hooks/useAgents';
 import { useTheme } from './hooks/useTheme';
 import { useSessions } from './hooks/useSessions';
@@ -14,8 +14,10 @@ const DesignPage = lazy(() => import('./pages/DesignPage'));
 const MultiAgentPage = lazy(() => import('./pages/MultiAgentPage'));
 const ChatPage = lazy(() => import('./pages/ChatPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
-const SimulatorPage = lazy(() => import('./pages/SimulatorPage'));
 const OgsSimPage = lazy(() => import('./pages/OgsSimPage'));
+// v5.3：原「3D 模拟」(Kernel3DPage) 与「3D 建模工具」(LandfillToolPage) 合并为
+// 单一入口「三维建模分析」—— 两者渲染的本就是同一份会话几何，是重复入口
+const KernelToolPage = lazy(() => import('./pages/KernelToolPage'));
 const AdminPage = lazy(() => import('./pages/AdminPage'));
 
 // 布局组件
@@ -43,8 +45,18 @@ export default function App() {
       <Route path="/diagnose" element={<AppShell />} />
       <Route path="/design" element={<AppShell />} />
       <Route path="/multi-agent" element={<AppShell />} />
-      <Route path="/3d-simulator" element={<AppShell />} />
+      {/* 旧「3D 模拟」入口保留为重定向（外部书签与旧文案里的 navigateTo 不 404） */}
+      <Route path="/3d-simulator" element={<Navigate to="/tool" replace />} />
       <Route path="/ogs-sim" element={<AppShell />} />
+      <Route path="/kernel-studio" element={<Navigate to="/tool" replace />} />
+      {/* 「三维建模分析」全屏接管：不套 AppShell（自带菜单栏/品牌条/状态栏） */}
+      <Route path="/tool" element={
+        <Suspense fallback={<PageLoader />}>
+          <ErrorBoundary fallbackLabel="三维建模分析">
+            <KernelToolPage />
+          </ErrorBoundary>
+        </Suspense>
+      } />
       <Route path="/settings" element={<AppShell />} />
       <Route path="/admin" element={
         <div className="flex h-[100dvh] w-full overflow-hidden">
@@ -68,8 +80,8 @@ function AppShell() {
   const isDesignPage = location.pathname === '/design';
   const isHomePage = location.pathname === '/';
   const isMultiAgentPage = location.pathname === '/multi-agent';
-  const isSimulatorPage = location.pathname === '/3d-simulator';
   const isOgsSimPage = location.pathname === '/ogs-sim';
+  // v5.3：/tool 已改为全屏独立路由，不再走 AppShell
 
   const { theme, toggleTheme } = useTheme();
   const { agents, addAgent, updateAgent, deleteAgent, getAgent } = useAgents();
@@ -153,8 +165,8 @@ function AppShell() {
   const handleOpenDiagnose = useCallback(() => navigate('/diagnose'), [navigate]);
   const handleOpenDesign = useCallback(() => navigate('/design'), [navigate]);
   const handleOpenMultiAgent = useCallback(() => navigate('/multi-agent'), [navigate]);
-  const handleOpenSimulator = useCallback(() => navigate('/3d-simulator'), [navigate]);
   const handleOpenOgsSim = useCallback(() => navigate('/ogs-sim'), [navigate]);
+  const handleOpenTool = useCallback(() => navigate('/tool'), [navigate]);
 
   const handlePermissionModeChange = useCallback((mode: PermissionMode) => {
     setPermissionModeState(mode);
@@ -182,13 +194,12 @@ function AppShell() {
           onOpenDiagnose={handleOpenDiagnose}
           onOpenDesign={handleOpenDesign}
           onOpenMultiAgent={handleOpenMultiAgent}
-          onOpenSimulator={handleOpenSimulator}
           onOpenOgsSim={handleOpenOgsSim}
+          onOpenTool={handleOpenTool}
           onOpenAdmin={() => navigate('/admin')}
           isDiagnosePage={isDiagnosePage}
           isDesignPage={isDesignPage}
           isMultiAgentPage={isMultiAgentPage}
-          isSimulatorPage={isSimulatorPage}
           isOgsSimPage={isOgsSimPage}
         />
         </ErrorBoundary>
@@ -223,8 +234,6 @@ function AppShell() {
             <HomePage />
           ) : isMultiAgentPage ? (
             <MultiAgentPage />
-          ) : isSimulatorPage ? (
-            <SimulatorPage />
           ) : isOgsSimPage ? (
             <OgsSimPage />
           ) : (

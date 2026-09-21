@@ -43,18 +43,18 @@ timeout /t 8 /nobreak > nul
 
 :: 自动打开浏览器（多个常用页面）
 echo [*] 打开浏览器...
-start "" "http://localhost:5173"
+start "" "http://localhost:5173/chat/new"
 
 echo.
 echo ============================================================
 echo   ✓ 启动成功！
 echo.
-echo   主界面: http://localhost:5173
-echo   聊天:   http://localhost:5173/chat/new
+echo   智能体对话: http://localhost:5173/chat/new   （打开即此页）
+echo   三维建模分析: http://localhost:5173/tool     （v5.3 原 3D 模拟与建模工具合并）
 echo   诊断:   http://localhost:5173/diagnose
-echo   计算中心: http://localhost:5173/design
+echo   计算工具库: http://localhost:5173/design
 echo   多智能体: http://localhost:5173/multi-agent
-echo   3D 模拟: http://localhost:5173/3d-simulator
+echo   稳定化计算: http://localhost:5173/ogs-sim
 echo   后台:   http://localhost:5173/admin  (token: landfillmind-dev-2026)
 echo.
 echo   关闭此窗口不会停止服务，请关闭 "LandfillMind-Dev" 窗口

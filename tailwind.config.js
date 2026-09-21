@@ -4,6 +4,12 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
+      // 超大屏断点：默认断点止于 2xl=1536，2.5K+ 屏（本机 2552px）与 1024 下
+      // 渲染同一套布局，内容被 max-w 夹成中间窄带。3xl 起的适配**只在
+      // ≥1920px 生效**，1366/1440/1536 笔记本与常见外接屏零变化。
+      screens: {
+        '3xl': '1920px',
+      },
       colors: {
         // 品牌主色
         primary: {

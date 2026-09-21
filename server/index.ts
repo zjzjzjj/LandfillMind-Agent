@@ -22,7 +22,7 @@ import { initRetrieval } from './retrieval.js';
 import { buildChatAugmentation, summarizeConversation } from './augment.js';
 import { runOgsScenario } from './ogs.js';
 import { buildScene } from './scene-builder.js';
-import { TOOL_DEFS, TOOL_MAP, buildFunctionTools, execTool, detectRuleToolCall } from './tools.js';
+import { TOOL_DEFS, TOOL_MAP, buildFunctionTools, execTool, detectRuleToolCall, TOOL_ROUTING_HINT } from './tools.js';
 import type { ToolRun } from './tools.js';
 import { startIotBroker, stopIotBroker } from './iot.js';
 import type { DetailLevel } from './llm.js';
@@ -32,6 +32,7 @@ import { calcRouter, CALC_REGISTRY, CALC_FORMULAS } from './routes/calc.js';
 import { ogsRouter } from './routes/ogs.js';
 import { kbRouter } from './routes/kb.js';
 import { iotRouter } from './routes/iot.js';
+import { kernel3dRouter } from './routes/kernel3d.js';
 import { handleSceneChat } from './scene-chat.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -55,6 +56,7 @@ const TOOL_KIND: Record<string, string> = {
   analyze_site: 'calc',
   run_ogs_scenario: 'ogs',
   build_scene: 'scene',
+  run_3d_kernel: 'kernel',
   run_diagnosis: 'diagnosis',
   deep_analysis: 'deep',
   generate_report: 'report',
@@ -131,6 +133,7 @@ app.use('/api', (req, res, next) => {
     || req.path === '/sessions'
     || req.path === '/calc' && req.method === 'GET'
     || req.path.startsWith('/kb/') && req.method === 'GET'
+    || req.path.startsWith('/kernel3d/') && req.method === 'GET'
   ) return next();
   const ip = req.ip ?? 'unknown';
   const now = Date.now();
@@ -285,6 +288,8 @@ async function handleCompatChat(req: express.Request, res: express.Response, pri
   try {
     const conversation: { role: string; content: string }[] = [];
     if (systemPrompt) conversation.push({ role: 'system', content: systemPrompt + detailPromptSuffix(detail) });
+    // v5.2：权威内核路由铁律（服务端统一注入，防点名不调用 / 正文编造数值）
+    conversation.push({ role: 'system', content: TOOL_ROUTING_HINT });
 
     // 长对话记忆：较早消息压缩为要点摘要
     const msgs: any[] = messages ?? [];
@@ -506,7 +511,13 @@ async function handleCompatChat(req: express.Request, res: express.Response, pri
             role: 'assistant', content: null,
             tool_calls: [{ id: tcId, type: 'function', function: { name: call.name, arguments: call.arguments || '{}' } }],
           });
-          toolMessages.push({ role: 'tool', tool_call_id: tcId, content: compactRunDigest(run) });
+          let toolContent = compactRunDigest(run);
+          // 内核建模成功后追发"下一步"指令：实测 glm-4-flash 会在续轮把工具调用
+          // 泄漏成正文（输出 run_3_d_kernel {...} 文本而非 tool_calls），显式钉住链路
+          if (call.name === 'run_3d_kernel' && run.ok && (run.result as any)?.action === 'model') {
+            toolContent += '\n【下一步】三维模型已就绪。用户要求的后续分析（如稳定性/沉降/污染）必须继续通过 function calling 正常调用 run_3d_kernel（action=对应动作，无需再给 spec）；严禁把工具调用写成正文文本，严禁不经调用给出数值。';
+          }
+          toolMessages.push({ role: 'tool', tool_call_id: tcId, content: toolContent });
         }
         round++;
       }
@@ -986,11 +997,12 @@ app.post('/api/ab/reset', adminAuth, (_req, res) => {
   res.json({ ok: true, message: 'AB stats 重置完成' });
 });
 
-// ============ 独立路由模块（calc / ogs / kb / iot） ============
+// ============ 独立路由模块（calc / ogs / kb / iot / kernel3d） ============
 app.use(calcRouter());
 app.use(ogsRouter());
 app.use(kbRouter());
 app.use(iotRouter());
+app.use(kernel3dRouter());
 
 // ============ v5 工程报告（tool_runs 可追溯记录 → Markdown/sections） ============
 import { generateReport } from './report.js';

@@ -1,5 +1,203 @@
 # Changelog · LandfillMind 填埋场全周期智能体
 
+## v5.3（2026-09-20 · 两个 3D 入口合并为「三维建模分析」+ 桌面工具 1:1 对齐）
+
+> v5.2 留下了两个 3D 入口：「3D 模拟（真实模型）」是纯查看器，「3D 建模工具」是
+> 桌面移植的工作台 —— 但两者渲染的**本就是同一份会话几何**（`model.obj`），
+> 是重复入口而非互补功能。本版本把它们合并为单一页面，并按桌面工具
+> （Landfill 3D Tool v1.7.0）的界面与工作流逐项对齐。
+
+- **合并与路由**：新增 `src/pages/KernelToolPage.tsx`（全屏接管，不套 AppShell，
+  自带菜单栏/品牌条/工具栏/状态栏）；`/tool` 指向它，`/3d-simulator` 改为
+  `Navigate to="/tool"` 重定向（旧书签与 `model-builder` 的 `navigateTo` 不 404）。
+  侧边栏两行合为一行**「三维建模分析」**。删除 `Kernel3DPage.tsx` /
+  `LandfillToolPage.tsx` / `SimulatorPage.tsx`（合并前的三份实现）。
+- **页面结构**（`src/pages/KernelTool/`）：
+  `chrome/` 菜单栏（工程 15 项 + 帮助）/ 品牌条（标题 + 4 chip，版本号从内核 info 取）/
+  工具栏（8 按钮）/ 状态栏 / 视图条 / 结果条（340px **右列**：计算结果表 + 运行日志）；
+  `panels/` 建模 · 计算（库容/坡度/剖面/沉降/稳定性）· 污染 · 开挖 四页签；
+  `stage/` 中央图形区（three.js 交互图 ⇄ 内核 matplotlib 图 ⇄ 二维结果图）；
+  `spec/` 视图与参数规格（默认值逐项照抄桌面）；`state/` 字段级 store + 动作层；
+  `ui/` 桌面控件等价物。
+- **亮色皮肤**：`skin.css` 的 `.lf-light` 作用域内重定义 CSS 变量为桌面色值
+  （BG `#eef2f8` / PANEL `#ffffff` / ACCENT `#0d7fd6` / BORDER `#c3d0e0` …），
+  并覆盖滚动条、`::selection`、`:focus-visible` 三处全局规则。不动全局主题，
+  不影响其它页面。
+- **状态组织**：表单上百个字段走 `FieldStore`（`useSyncExternalStore` 字段级订阅，
+  零新依赖）—— 左栏敲一个字符只重渲染那一个 `<input>`，整页（9 视图条 + 结果表 +
+  日志）不动。布局状态另用一个小 store；Context 只放低频的运行层（pool/logs/busy）。
+- **三维视图**：`KernelMeshView` 扩展 `zexag`（垂直夸张）/ `groups`（实体组 +
+  叠加组）/ `overlaySpec`+`overlayParams`（⑥三维显示 驱动内核重导网格）/ `apiRef`
+  （↺↻ 旋转、适应视野）；修掉材质泄漏（原来只 dispose geometry 不 dispose material）
+  与鼠标键位（对齐桌面「左键旋转 · 右键缩放 · 滚轮缩放」）；场景底色改读**挂载元素**
+  的 CSS 变量（原来读 `documentElement`，作用域皮肤下会取到深色）。
+- **新增后端通道** `POST /api/kernel3d/mesh/viewport`：按叠加层**指令**重导网格
+  （需要算物理的那几层由内核复用分析侧构造，不在服务端另算）；`viewport.json`
+  记指纹，改无关字段不会触发重导。文件路由放行 pdf/svg/csv。
+- **配套内核改动**（Landfill 3D Tool 仓库，4 个 commit）：视图参数化、出版件导出
+  （PNG 300dpi / PDF / SVG）、单剖面 Bishop、`data.best` 补 A/B 端点、三维叠加图层
+  （新 `mesh_overlay.py`）、`spec.demo` 内置示例场、沉降 `gamma_water` 透传。
+  **并修掉一个真 bug**：多分区开挖「存盘重开后静默退回」—— 桌面「应用开挖」与
+  两条重载路径对 ≥2 区的口径不一致，实测同一分区表两边顶面差 12.0m（正是总开挖深度）。
+- **`/scene-classic` 退役**：经典风格化示意场景随两个 3D 入口合并一并删除（路由、
+  `SimulatorPage`，以及 ChatPage/DiagnosisPage/OgsSimPage 里指向它的按钮）。
+  `LandfillScene3D.tsx` 本体保留（HomePage 仍在用）。对话页里指内核真实模型的按钮
+  改指 `/tool`；**纯风格化场景的按钮是移除而非改指** —— 新页渲染的是内核真实几何，
+  指过去会误导。
+- **画布建模**（`src/components/PolygonCanvas.tsx`）：补上桌面的「多边形底面绘制 —
+  大画布」（840×640 Toplevel）。交互逐条对齐：左键加点 · 点在已有边上可选中设坡角 ·
+  双击闭合 · 右键撤销 · 滚轮缩放 · 中键平移；顶栏 撤销/清空/闭合多边形/适应视图/关闭；
+  带网格与坐标刻度、顶点编号、光标世界坐标读数。选中的边就地弹 `1:n` 输入框写回
+  逐边坡比（桌面 `_param_edge_entry_show`）。与顶点文本框**双向同步**。
+- **修复：污染与羽流报「未知错误」**。两层问题叠加：
+  ① 前端把 `plume_snapshot_days` 的列表默认值当逗号串发过去，内核原先不做类型
+  检查，字符串一路带到羽流求解器才炸（`unsupported operand type(s) for /: 'str'
+  and 'float'`）—— 只在开了羽流时才暴露。前端改为**按字段声明的 kind 解析**
+  （L/C/B 转数字数组、C 校验 12 项、B 校验 4 项），内核侧也加了入口护栏给出可读
+  报错。
+  ② **错误本身看不见**：`execTool` 的失败信封把原因放在 `warnings[0]`，而 ToolRun
+  上没有 `error` 字段（`server/tools.ts:962-974`），前端只读 `resp.error` → 于是
+  每次内核失败都显示「未知错误」，真实原因只能去日志里翻。已改为优先取 warnings。
+- **修复：逐边坡比的空位与长度**。内核要求坡比个数 == 顶点数且每条边为有限正数
+  （桌面 `_edges_values()` 本就是「空/非法回退统一坡度」），前端原先原样发
+  `[2, None, 3, None]` 或只填一行的 `[2]` 会被拒。`buildSpec` 现按边数补齐、
+  空位回退统一坡比。
+- **三维查看器的缩放与雾**（用户反馈）：去掉场景雾 —— 雾是按**到相机的距离**
+  算的，一缩小整块地形就被背景色糊掉、越缩越看不清；原设计里雾是给"远处网格
+  淡出托底"用的，但代价太大。改为限制缩放倍率把视野圈住：
+  `OrbitControls.minDistance = 0.03×场宽` / `maxDistance = 2.2×场宽`
+  （默认轴测取景距离约 1.0×场宽，往外留 2.2 倍够看场地与周边网格的关系）。
+  顺带把 `near/far` 从"按某次取景距离"改成**按场地尺度**给 —— 相机现在能在
+  0.03~2.2 倍之间自由缩放，取景距离只是其中一个点；贴着看时 near 太大会被裁，
+  缩得远时 near 太小又会让抬高 0.1m 量级的叠加层深度精度不够而闪烁。
+  实测：滚轮缩小 15 / 45 / 105 次的截图**字节完全相同**（到上限即夹住），
+  且模型始终保持原色、不再被雾冲淡。
+
+  一批只在真实交互里才暴露的问题：
+  ① **会话不同源**：工具页有自己的 sid，三维查看器读的却是**全局活动会话指针**。
+     新浏览器里两者不一致 → 画面里明明有模型，一点计算就报「请先建模」。现在
+     页面加载时若自己的会话还没有工程就**接管活动会话**（查看器与计算同源，
+     "在对话里建模 → 来工具页继续算"这条主链路才成立）。
+  ② **模型类视图永不出图**：`FigureStage` 只按子视图条取图，而没有子视图条的
+     四个视图（等高线/坡度/剖面/库容曲线）`subFigs` 恒空 → 计算成功、状态栏
+     也对，画面却是「还没有结果」。现在按 `RENDERABLE` 点名取，并兜底池中首图。
+  ③ **「应用开挖」被上一次的 demo 吞掉**：`run_3d_kernel` 的 model 分支默认
+     **增量合并**，前端按整份表单发的 spec 缺 `demo` 键 → 上一次的
+     `demo:"plain"` 被继承 → 把示例场原样重建、开挖根本没进去。新增
+     `spec_mode:"replace"`（工具页专用，LLM 分支仍走增量改模）。
+  ④ **示例场几何没回填表单**：桌面 `load_demo` 后会 `_restore_param_project`
+     把示例参数灌回表单；Web 只回带了阶段标高/土层。于是加载示例后一按
+     「应用开挖」就用表单里的默认 300×200 矩形替换了示例场。现在内核回带
+     `data.demo.spec`（cells / polygon / points 三条路线，含逐边坡比），前端灌回。
+  ⑤ **分区 `top_z` 为空时整区被静默丢弃**：`normalizeL3dSpec` 的过滤条件写了
+     `Number.isFinite(e.top_z)`，而 `Number.isFinite(null) === false` —— 空
+     `top_z` 恰恰是内核认的「由现有堆体顶面采样」。四个分区被全丢，开挖纹丝不动
+     （实测示例场 513.9 万m³ 一点没变）。同时桥侧 `c.get("top_z", 0.0)` 的缺省
+     也应是 `None` 而非 `0.0`。修好后应用开挖：513.9 → **317.1 万m³**，与在内核
+     里直接调 `apply_excavation_model` 的结果完全一致。
+- **羽流图排版重做**（配套内核 commit `7a2742a`，用户反馈"标签、图名挤在一起看不清"）：
+  `plot_plume_plan/section` 的标题原是一行不折、由 6~9 段指标拼成（90~100 字符），
+  右端压到 colorbar 顶标签；图例不透明坐在 axes 右下角盖住羽流；"地下水流向"
+  文字探进标题带。Web 侧更严重（桥画布更矮 + `bbox_inches="tight"` 把溢出完整扩进
+  PNG）。修在内核共享绘图函数里：标题折两行（指标一个不删）、图例外置到轴下方
+  2 列、流向标注收进 axes 内部、colorbar `shrink=0.86` 让位；两图自管布局并登记进
+  桌面 app.py 跳过名单（否则桌面统一 adjust 会冲掉边距，两边观感劈叉）。
+  桌面 / Web / DOCX 附录三处同时受益；新增 14 条包围盒排版断言钉死防回潮。
+- **四页大屏布局适配**（用户反馈"多智能体、计算工具库、首页等布局偏小"）：
+  根因是全项目响应式在 lg(1024) 封顶（`xl:/2xl:` 0 命中），2.5K 屏上 1152/1024px
+  的 max-w 把内容夹成中间窄带。新增 tailwind 断点 `3xl=1920px` + 共享令牌
+  `src/utils/layout.ts`（`PAGE_MAXW` / `widePx`），首页 7 处容器 1152→1720、
+  计算工具库 1024→1560 且左列与 SVG 图表同步放大、多智能体 1720、快诊结果区
+  补上 `mx-auto`（原先连居中都没有）。**全部挂 `3xl:`，笔记本零变化**——
+  像素对比实测：1366×768 下 design/multi/diagnose 三页与改前逐像素一致，
+  home 仅数字滚动动画的时序差（平均像素差 0.0001）。
+
+## v5.2（2026-09-19 · run_3d_kernel 会话模式：自定义场地三维内核 + 精确图回传 + 场景融合）
+
+> v5.1 的 `run_3d_kernel` 只能在**内置示例场**上做单发快查（module 五分支），
+> 用户报出自己场地的长宽/坡比/土参时内核帮不上。本版本给同一工具加
+> `action=` 会话分支：对话建模 → 专项分析 → 准确结果图与简报 → 一键把真实
+> 尺寸/时程送回三维仿真器（融合定位：内核出准确数字与剖面图，旧 three.js
+> 场景继续承担"大规模示意图 + 周边环境关系"）。
+
+- **`server/kernel3d.ts` 双通道**：保留旧 stdin 桥（`py -m landfill3d.cli`，
+  pilot-benchmark / k3d-check 契约不动）；新增 `runKernel3dAction()` 文件桥
+  —— spawn `py <KERNEL3D_REPO_PATH>/agent_bridge.py --input --output --workdir`
+  （数组 argv 无 shell，空格/中文路径由 Node 转义；`py` 启动器超时用
+  `taskkill /T /F` 杀进程树）。动作分级超时 60–300s（`KERNEL3D_TIMEOUT_MS` 覆盖）。
+- **会话态**：`data/kernel3d/sessions/<sid>/{spec.json, project.json, runs/}`；
+  `action=model` 增量改模（新字段覆盖、底形互斥清理、原子写）；分析类动作
+  无模型时返回"先建模"引导错误；sceneHint 落盘回带（分析卡片也有场景按钮）。
+- **新产物路由** `server/routes/kernel3d.ts`：`GET /api/kernel3d/health` +
+  白名单文件路由（路径段正则 + resolve 包含校验 + 扩展名白名单 + `?dl=1`），
+  限流豁免 GET；前端 `run_3d_kernel` 获得正式 kind `'kernel'`（旧版一直缺映射）。
+- **卡片（ChatPage）**：结论 pre + 口径/grade/耗时 chips + 结果表（扫描/污染/
+  开挖通用 cols+rows）+ key_numbers 平铺 + 内核 PNG（点开原图）+ ⬇分析简报；
+  **「🏔 在 3D 场景查看」**：sceneHint → GeoParams 工程尺寸按真实长宽高坡角
+  立堆体，污染 CH₄ 年序列→火炬强度（ch4_rate m³/d 换算）、沉降时程→堆体
+  下沉（DISPLACEMENT_Y1 m），复用既有 scene-built / scene-ogs 双通道，
+  仿真器侧代码零改动。
+- **B 侧配套**（Landfill 3D Tool v1.7.1-unreleased）：新增 `agent_cli.py` +
+  `agent_bridge.py` headless JSON CLI（含 physics 守卫、99.99 哨兵保护、
+  NaN/大数组消毒），`test_agent_bridge.py` 35 项契约测试全过。
+- **「内核工作台」升级为「3D 建模工具」整页移植（用户定调：不要视图集合，要工具本体）**：
+  新页 `/tool`（侧边栏「3D 建模工具」）复刻桌面工具的界面结构与工作流——
+  左列参数区 Notebook（**建模 | 计算[库容/坡度/剖面/沉降/稳定性] | 污染 | 开挖**，
+  与桌面 tab 一一对应，含分层/单元/开挖区行编辑表），右列主视图区
+  （**3D 真实网格 ⇄ 内核渲染图**切换）+ 结果表（对应桌面 Treeview）+
+  状态卡 + 运行日志窗。计算走新 GUI 通道 `POST /api/kernel3d/run`
+  （直驱 run_3d_kernel 会话动作，仍落 tool_runs）；B 侧为此新增
+  `analyze_slope` / `analyze_section` 两个 CLI 动作（坡度统计/剖面坡比分段）。
+  工程存档下载 = 桌面"另存工程"的 Web 等价。查看器核心抽为共享组件
+  `KernelMeshView`（/3d-simulator 全屏页与 /tool 内嵌小窗共用）。
+  旧 /kernel-studio 路由 301 到 /tool。**对齐升级（同日二版）**：主视图条改桌面同款
+  9 视图（●三维模型 ◎等高线 ▲坡度 ┃剖面 ∿库容曲线 ▽沉降 ⚖稳定性 ◈开挖 ◉污染）
+  + 各页子视图条（沉降：深度剖面/平面分布；稳定性：Fs网格/临界圆弧/断面扫描/Pf-β；
+  开挖：开挖Fs/圆弧/逐级坡；污染：产气时程/渗滤液/水质/柱穿透/羽流平面·剖面）；
+  工具条第二行（俯视/侧视/轴测、⤓导出当前图、库容曲线 CSV、▣/◀ 折叠）；
+  建模页分组①~④（含**设计堆高 design_H、逐边坡比**）；库容页起始/终止/分层数/
+  阶段标高列；沉降页 γsat/σp/Cs 全列 + 指定时程点 + 差异沉降平面勾选；稳定性页
+  Bishop 分辨率 + 粗筛先行 + MC 分布类型；**污染页 ①~⑥ 全参数组**（下拉选项由
+  内核 `GET /api/kernel3d/info` 动态下发——与桌面声明式规格表同一单一来源机制）；
+  开挖页独立两步（▶应用开挖 / ↩取消开挖还原 / ▶算开挖稳定性）。
+  文件菜单等价：打开工程 JSON（`POST /api/kernel3d/import`，参数化与测点两条路线均可
+  重建并即时出网格）+ 另存工程下载。
+- **「对齐桌面」三版补齐（同日）——原列差距全部落地**：
+  ① **开挖画布**（`ExcZoneCanvas`，SVG）：✂ 按住拖线切割 / ⌣ 点边设逐边坡比 /
+     ⊞ 一键切四区 / ↶ 撤销上一刀 / 清空——切割几何由内核 `zones` 动作
+     （`zones_from_cuts`/`quadrant_cuts`）真算，分区表双向同步可手改；
+  ② **阶段分区开挖**：新 CLI 动作 `analyze_excavation_phased`（run_phased +
+     phased_summary），出「分区阶段 Fs-阶段曲线 / 阶段剖面」两子视图 + 阶段下拉
+     （最不利/逐阶段，切换即时重渲）；
+  ③ **成果导出**：CLI `export` 动作复用 `export_report.py`（与桌面同一代码）——
+     Excel 汇总（库容+污染十表+开挖表）、Word 报告（【章节】+ 内嵌产气/渗滤液图）、
+     当前图底层数据 CSV（`figure_rows` 映射，缺失时前端回退结果表；xlsx/docx 经
+     文件路由下载，Content-Type 白名单已扩）；
+  ④ **测点插值建模**：`_load_model` 支持测点路线工程重建（build_all + 开挖回挂），
+     `build_model` 新增 `source=points`（base/top_points + 插值法 + 顶面模式 +
+     设计标高），建模页 ②′ 支持粘贴/CSV 文件导入，打开工程自动回填测点；
+  ⑤ **污染结果时刻**：analyze_pollution 返回 `time_options`（产气快照年份/羽流快照
+     天数 + 实际使用值），状态栏年份/时刻下拉改值即重跑重渲（gas_field 产气强度
+     平面、羽流平面按所选时刻出图，同桌面 cmb_poll_time 机制）。
+  残余小差异：画布上分区轮廓的实时预览按最终 zones 结果重绘（非桌面逐帧布尔运算）、
+  羽流剖面/平面的历史包络线开关未暴露（用高级参数 JSON 亦可覆盖）。
+- **真实三维查看器**：
+  `/3d-simulator` 改渲染新页 `Kernel3DPage`（three.js + OBJLoader，拖拽旋转/滚轮缩放、
+  俯视-平面-正面预设、X 向剖切滑杆、线框、顶面/坡面/基底图层开关、信息栏显示真实
+  场地尺寸与三角数），数据源为**内核导出的会话 OBJ**（B 侧新增 `mesh_export.py`：
+  Zt/Zb 网格 + 足迹裙边 → g_top/g_side/g_base 三组带顶点色；`export_mesh` 动作，
+  `build_model` 自动附带）。`GET /api/kernel3d/mesh[/info]/active` 端点在
+  project.json 比网格新时自动重导。经典风格化场景**保留**于 `/scene-classic`
+  （build_scene / OGS 联动 / 环境示意按钮全部重定向过去；内核卡片新增
+  「🏔 真实三维模型」主按钮 + 降为次要的「🖼 环境示意场景」）。侧边栏「3D 模拟」
+  改名「3D 模拟（真实模型）」。
+- `.env.example` 增 `KERNEL3D_REPO_PATH / KERNEL3D_PY / KERNEL3D_TIMEOUT_MS` 说明；
+  未配置时工具返回可读错误信封，其余功能不受影响。同机部署专用（spawn 模式），
+  云端部署不含此能力。
+- 验证：`npx tsc -b` 全绿（顺手修掉 kernel3d.ts 旧桥 4 处既有 TS18047）；
+  execTool 层 8 用例（引导/建模/稳定/沉降+报告/污染/旧 module/红队 v160/
+  互斥拒绝）与 HTTP 路由安全用例全过；`scripts/tool-smoke.ts` 已加会话链。
+
 ## v5.1（2026-09-13 · 多智能体重构：从"4 条硬编码流水线"到"证据驱动 + 交叉研判"）
 
 > **问题定性**：v5.0 的多智能体模块声称"4 领域 Agent 真实调用工程工具 + 总工研判"，

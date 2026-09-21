@@ -140,8 +140,10 @@ export interface LandfillApi {
   applyOgsResult(scenario: string, series: Array<{ varName?: string; points: { t: number; v: number }[] }>): void;
 }
 
-// ============ 跨页信令：AI 生成的 3D 场景（scene-built，仿 scene-ogs 一次性信封） ============
-//   ChatPage 收到 buildScene 工具回执后写入，SimulatorPage 挂载时消费一次即移除。
+// ============ 跨页信令：AI 生成的 3D 场景（scene-built 一次性信封） ============
+//   v5.3 起**无消费者**：原本由 ChatPage 写入、/scene-classic（SimulatorPage）消费，
+//   而后者已随两个 3D 入口合并而删除。保留读写函数是因为 HomePage 仍在用
+//   LandfillScene3D 本体，将来若要做"AI 场景 → 场景页"的入口不必重写。
 //   数据形状：{ geo, preset, snapshot, ogSummary?, navigateTo }（由 server/scene-builder 产出）
 export const SCENE_BUILT_KEY = 'scene-built-v1';
 

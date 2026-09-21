@@ -513,7 +513,12 @@ export function saveToolRun(
       run.tool,
       run.toolLabel,
       JSON.stringify(run.params ?? {}).slice(0, 8000),
-      JSON.stringify({ summary, warnings: run.warnings ?? [] }).slice(0, 4000),
+      JSON.stringify({
+        summary, warnings: run.warnings ?? [],
+        // R3 纪律落地：口径落章随结果持久化，报告层据此自动落章（试点二轮发现此链路曾断）
+        ...(rawResult && typeof rawResult === 'object' && rawResult.stamp
+          ? { stamp: rawResult.stamp } : {}),
+      }).slice(0, 4000),
       run.grade ?? null,
       run.status,
       run.elapsedMs,
