@@ -16,7 +16,7 @@ import { lookupKB, KB_ENTRIES } from './kb.js';
 import { AGENT_TOOL_USAGE } from './prompts.js';
 import { extractSceneParams, getCachedAgentRun, agentCache, warmAgentCache } from './multiagent.js';
 import type { MASceneParams } from './multiagent.js';
-import { resolveCompat, resolveCfgForModel, resolveOpenRouter, resolveGlm, detailMaxTokens, detailPromptSuffix } from './llm.js';
+import { resolveCompat, resolveCfgForModel, resolveOpenRouter, resolveGlm, resolveDeepSeek, modelForCfg, applyThinkingOff, detailMaxTokens, detailPromptSuffix } from './llm.js';
 
 import { initRetrieval } from './retrieval.js';
 import { buildChatAugmentation, summarizeConversation } from './augment.js';
@@ -230,6 +230,7 @@ function friendlyModelName(id: string): string {
     'glm-4.7': 'GLM-4.7（智谱直连）',
     'glm-4.6v': 'GLM-4.6V（智谱直连·视觉）',
     'glm-4.6v-flash': 'GLM-4.6V-Flash（智谱直连）',
+    'deepseek-flash': 'DeepSeek Flash（直连）',
   };
   if (map[id]) return map[id];
   if (id.startsWith('deepseek/')) return 'DeepSeek ' + id.slice('deepseek/'.length) + '（OpenRouter）';
@@ -327,7 +328,7 @@ async function handleCompatChat(req: express.Request, res: express.Response, pri
     const selectedCfg = resolveCfgForModel(selectedModel);
     const fallbackCfg = selectedCfg?.kind === 'glm' ? resolveOpenRouter() : resolveGlm();
     const chain: { cfg: CompatCfg; model: string }[] = [];
-    if (selectedCfg) chain.push({ cfg: selectedCfg, model: selectedModel });
+    if (selectedCfg) chain.push({ cfg: selectedCfg, model: modelForCfg(selectedCfg, selectedModel) });
     if (fallbackCfg && fallbackCfg.baseUrl !== selectedCfg?.baseUrl) {
       chain.push({ cfg: fallbackCfg, model: fallbackCfg.model });
     }
@@ -374,7 +375,9 @@ async function handleCompatChat(req: express.Request, res: express.Response, pri
     }
 
     // ---- 通道A：LLM 真 function calling（仅规则未命中才启用全部工具，模型自主选工具、自补参数）----
-    const supportsFuncTools = (selectedCfg?.kind === 'glm' || selectedCfg?.kind === 'openrouter');
+    // compat = DeepSeek 官方直连：OpenAI 兼容 tools 字段可用；若上游拒（400）由下方
+    // "去 tools 重试"分支自动降级为通道B 规则兜底，故放开不会造成硬故障。
+    const supportsFuncTools = (selectedCfg?.kind === 'glm' || selectedCfg?.kind === 'openrouter' || selectedCfg?.kind === 'compat');
     let useTools = !ruleToolCall && supportsFuncTools;
     // 工具消息（assistant tool_calls + tool result）累积，供多轮推理
     const toolMessages: { role: string; content?: unknown; tool_call_id?: string; tool_calls?: any[] }[] = [];
@@ -393,7 +396,8 @@ async function handleCompatChat(req: express.Request, res: express.Response, pri
           temperature: 0.7,
           max_tokens: maxTokens,
         };
-        if (item.cfg.kind === 'glm') body.thinking = { type: 'disabled' };
+        // GLM / DeepSeek 直连：显式关闭思考，否则 reasoning_content 吃满 max_tokens → 空正文
+        applyThinkingOff(item.cfg, body);
         // 组装 tools：联网搜索（GLM 原生 web_search）+ 全部工程工具（v5 统一工具层）
         const toolsArr: unknown[] = [];
         if (item.cfg.kind === 'glm' && WEB_SEARCH_ENGINE !== 'off') {
@@ -440,7 +444,8 @@ async function handleCompatChat(req: express.Request, res: express.Response, pri
 
         // init / KB 引用 / sources：首轮只发一次
         if (!initSent) {
-          const effectiveModel = selectedCfg && item.cfg.baseUrl !== selectedCfg.baseUrl ? item.cfg.model : selectedModel;
+          // 上报真实发出的模型名（经 modelForCfg 白名单规整后的值），避免前端显示与上游实际不符
+          const effectiveModel = item.model;
           res.write(`data: ${JSON.stringify({ type: 'init', sessionId: sid, assistantMessageId: assistantMsgId, model: effectiveModel })}\n\n`);
           res.write(`data: ${JSON.stringify({ type: 'sources', kb: aug.kb, calcs: aug.calcs })}\n\n`);
           if (aug.kb.length) {
@@ -907,6 +912,10 @@ app.get('/api/models', (_req, res) => {
   const glm = resolveGlm();
   if (glm) {
     glm.models.forEach(id => models.push({ id, name: friendlyModelName(id), provider: '智谱直连' }));
+  }
+  const ds = resolveDeepSeek();
+  if (ds) {
+    ds.models.forEach(id => models.push({ id, name: friendlyModelName(id), provider: 'DeepSeek 直连' }));
   }
   res.json({ models, active: getProvider() });
 });

@@ -107,7 +107,7 @@ export default function ViewBar({ meshApi, onFit }: {
           })}
           <div className="flex-1" />
           {bar.timeAxis === 'stage' && (
-            <StageSelect onPick={(v) => void a.doPhased(v)} />
+            <StageSelect onPick={(v) => void a.onStagePick(v)} />
           )}
           {bar.timeAxis === 'poll' && (
             <PollTimeSelect onPick={(gy, pd) => void a.doPollution(gy, pd)} opts={timeOpts} />
@@ -194,7 +194,9 @@ function StageSelect({ onPick }: { onPick: (v: string) => void }) {
   const [v, set] = useField<string>('exc.stage');
   const n = k.pool.excavation?.stageCount || 0;
   const opts: Array<[string, string]> = [['most', '最不利（阶段 k）']];
-  for (let i = 0; i <= n; i++) {
+  // 阶段编号 0..K 共 n 项（n=stageCount 已含阶段 0）—— 旧循环 `i <= n`
+  // 多出一档越界项, 选中后内核静默夹到末阶段
+  for (let i = 0; i < n; i++) {
     opts.push([String(i), i === 0 ? '阶段 0：开挖前' : `阶段 ${i}：已挖前 ${i} 个分区`]);
   }
   if (!n) return null;

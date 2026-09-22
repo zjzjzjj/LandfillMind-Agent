@@ -1,12 +1,14 @@
 /**
- * LLM 双通道统一入口（server 侧共享模块）
+ * LLM 三通道统一入口（server 侧共享模块）
  *
- * 默认唯一通道：智谱 GLM 直连（默认 glm-4-flash-250414），免费档并发=1 串行队列
+ * 默认通道：智谱 GLM 直连（默认 glm-4-flash-250414），免费档并发=1 串行队列
  * 可选通道：OpenRouter（配置 OPENROUTER_API_KEY 后启用），并发信号量上限 3
+ * 可选通道：DeepSeek 官方直连（配置 DEEPSEEK_API_KEY 后启用），并发信号量上限 3；
+ *          模型锁定 deepseek-flash（见 DEEPSEEK_ALLOWED_MODELS）
  *
  * 职责：
  *  1) resolveCfgForModel(model) —— 按模型 id 路由到正确通道
- *  2) enqueueLLM() —— GLM 串行队列；enqueueParallelLLM() —— OpenRouter 并发信号量
+ *  2) enqueueLLM() —— GLM 串行队列；enqueueParallelLLM() —— OpenRouter / DeepSeek 共用并发信号量
  *  3) llmComplete() —— 非流式文本完成：超时 + 退避重试 + 主备通道 fallback，
  *     永远返回 string | null，不抛错（null = 调用方走确定性模板兜底）
  */
@@ -57,30 +59,53 @@ export function resolveGlm(): CompatCfg | null {
   };
 }
 
-function legacyDeepSeek(): CompatCfg | null {
+/**
+ * DeepSeek 官方直连通道（填 DEEPSEEK_API_KEY 后启用）。
+ *
+ * 【红线】本通道只允许调用 DEEPSEEK_ALLOWED_MODELS 中的模型。历史会话里存着的旧模型名
+ * （deepseek-chat / deepseek-reasoner / deepseek-v4-pro 等）一律不得发出——统一由
+ * modelForCfg() 归一到白名单首项。api.deepseek.com 会把 deepseek-chat 静默别名到
+ * deepseek-flash，但"能跑"不等于"允许跑"，故仍在代码侧硬性收口，不依赖上游兜底。
+ */
+export const DEEPSEEK_ALLOWED_MODELS = ['deepseek-flash'];
+
+export function resolveDeepSeek(): CompatCfg | null {
   if (!process.env.DEEPSEEK_API_KEY) return null;
+  const requested = process.env.DEEPSEEK_MODEL?.trim();
+  const model = requested && DEEPSEEK_ALLOWED_MODELS.includes(requested)
+    ? requested
+    : DEEPSEEK_ALLOWED_MODELS[0];
   return {
     apiKey: process.env.DEEPSEEK_API_KEY,
     baseUrl: (process.env.DEEPSEEK_BASE_URL || 'https://api.deepseek.com').replace(/\/$/, '') + '/v1',
-    model: 'deepseek-chat',
-    models: ['deepseek-chat'],
-    label: 'DeepSeek',
+    model,
+    models: DEEPSEEK_ALLOWED_MODELS.slice(),
+    label: process.env.DEEPSEEK_LABEL || 'DeepSeek（直连）',
     kind: 'compat',
     concurrency: 'parallel',
   };
 }
 
-/** 兼容旧入口：OpenRouter 优先，其次 GLM 直连，最后旧 DEEPSEEK_* */
+/**
+ * 通道内模型名规整：请求的模型不在该通道白名单里时，落到该通道的默认模型。
+ * 防的是"张冠李戴"——例如会话里存的 deepseek-flash 被发给智谱 base URL，
+ * 上游只会回 400（或更糟：静默换成别的模型作答）。
+ */
+export function modelForCfg(cfg: CompatCfg, model: string | undefined): string {
+  return model && cfg.models.includes(model) ? model : cfg.model;
+}
+
+/** 兼容旧入口：OpenRouter 优先，其次 GLM 直连，最后 DeepSeek 直连 */
 export function resolveCompat(): CompatCfg | null {
-  return resolveOpenRouter() ?? resolveGlm() ?? legacyDeepSeek();
+  return resolveOpenRouter() ?? resolveGlm() ?? resolveDeepSeek();
 }
 
 /** 全部可用通道（主 → 备） */
 export function allProviders(): CompatCfg[] {
-  return [resolveOpenRouter(), resolveGlm(), legacyDeepSeek()].filter(Boolean) as CompatCfg[];
+  return [resolveOpenRouter(), resolveGlm(), resolveDeepSeek()].filter(Boolean) as CompatCfg[];
 }
 
-/** 按模型 id 路由通道：deepseek/*、nvidia/*、z-ai/*、dots-studio/* → OpenRouter；glm-* 裸名 → GLM 直连 */
+/** 按模型 id 路由通道：deepseek/*、nvidia/*、z-ai/*、dots-studio/* → OpenRouter；glm-* → GLM 直连；裸 deepseek-* → DeepSeek 直连 */
 export function resolveCfgForModel(model: string | undefined): CompatCfg | null {
   if (!model || model === 'codebuddy') return resolveCompat();
   if (model.startsWith('deepseek/') || model.startsWith('nvidia/') || model.startsWith('z-ai/') || model.startsWith('dots-studio/')) {
@@ -89,6 +114,9 @@ export function resolveCfgForModel(model: string | undefined): CompatCfg | null 
   // 注：OpenRouter 上同一厂商可能有多种模型，按前缀路由即可，不再二次校验模型清单
   if (model.startsWith('glm')) {
     return resolveGlm() ?? resolveCompat();
+  }
+  if (model.startsWith('deepseek-')) {
+    return resolveDeepSeek() ?? resolveCompat();
   }
   return resolveCompat();
 }
@@ -126,6 +154,30 @@ export function detailPromptSuffix(detail: DetailLevel | undefined): string {
 export function multiagentMaxTokens(detail: DetailLevel | undefined, kind?: CompatCfg['kind']): number {
   const base = detail === 'brief' ? 1200 : detail === 'detailed' ? 3200 : 1600;
   return Math.min(base, PROVIDER_MAX_TOKENS[kind ?? 'compat']);
+}
+
+// ============ 混合思考模型的"关思考"开关（GLM 与 DeepSeek 直连共用） ============
+/**
+ * 实测坑（2026-09-22，deepseek-flash @ api.deepseek.com）：
+ *   默认带 reasoning_content，且思考 token 会吃满 max_tokens
+ *   —— usage.completion_tokens_details.reasoning_tokens == max_tokens、
+ *   finish_reason=length、message.content 恒为空串。把 max_tokens 从 1500 提到
+ *   4000 只换来更多思考文本（9862 字），正文仍然 0 字，表现为"回答空白"。
+ * 有效写法只有 `thinking:{type:'disabled'}`（与智谱同参数名）与 `reasoning_effort:'none'`；
+ * `enable_thinking:false` / `reasoning:false` 实测均无效。
+ * kind==='compat' 目前唯一来源是 DeepSeek 直连通道，故与 glm 一并处理。
+ */
+export function needsThinkingOff(cfg: CompatCfg): boolean {
+  return cfg.kind === 'glm' || cfg.kind === 'compat';
+}
+
+/** 对象字面量拼装用的变体：`{ ...req, ...thinkingOff(cfg) }` */
+export function thinkingOff(cfg: CompatCfg): Record<string, unknown> {
+  return needsThinkingOff(cfg) ? { thinking: { type: 'disabled' } } : {};
+}
+
+export function applyThinkingOff(cfg: CompatCfg, body: Record<string, unknown>): void {
+  if (needsThinkingOff(cfg)) body.thinking = { type: 'disabled' };
 }
 
 // ============ 串行队列（GLM 免费档并发=1） ============
@@ -237,8 +289,8 @@ async function completeOne(
           temperature: opts?.temperature ?? 0.3,
           max_tokens: maxTokens,
         };
-        // 智谱通道显式关闭思考，避免 reasoning_content 占满 token 导致空正文
-        if (cfg.kind === 'glm') body.thinking = { type: 'disabled' };
+        // 智谱 / DeepSeek 直连通道显式关闭思考，避免 reasoning_content 占满 token 导致空正文
+        applyThinkingOff(cfg, body);
         const resp = await fetch(`${cfg.baseUrl}/chat/completions`, {
           method: 'POST',
           signal: ac.signal,
@@ -288,7 +340,7 @@ export async function llmComplete(
   for (const model of modelChain) {
     const cfg = resolveCfgForModel(model);
     if (!cfg) continue;
-    const text = await completeOne(cfg, model, messages, opts);
+    const text = await completeOne(cfg, modelForCfg(cfg, model), messages, opts);
     if (text) return text;
   }
   return null; // 全链失败：调用方回退模板

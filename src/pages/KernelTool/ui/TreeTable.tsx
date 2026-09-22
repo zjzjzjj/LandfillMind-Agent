@@ -47,7 +47,7 @@ export interface ColDef {
   label: string;
   /** 列宽 px（桌面 Treeview 每列都有明确 width） */
   w?: number;
-  type?: 'text' | 'num' | 'sel';
+  type?: 'text' | 'num' | 'sel' | 'chk';
   options?: string[];
   /** 只读列（如桌面的「序」「来源」） */
   readonly?: boolean;
@@ -106,6 +106,11 @@ export function RowsEditor({ path, cols, blank, extraButtons, height = 4, onRowS
                   <td key={c.key} style={{ padding: 2 }}>
                     {c.readonly ? (
                       <span className="lf-dim">{String(r[c.key] ?? '—')}</span>
+                    ) : c.type === 'chk' ? (
+                      <input type="checkbox"
+                             checked={!!r[c.key]}
+                             onChange={(e) => editCell(i, c.key, e.target.checked)}
+                             onClick={(e) => e.stopPropagation()} />
                     ) : c.type === 'sel' ? (
                       <select className="lf-input w-full" value={String(r[c.key] ?? '')}
                               onChange={(e) => editCell(i, c.key, e.target.value)}>

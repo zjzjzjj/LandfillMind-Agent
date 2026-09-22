@@ -158,6 +158,8 @@ export function useActions() {
           levels: parseLevels(z.levels || S().exc.levelsText),
           temp_n: nu(z.tempN) ?? null,
           order: z.order,
+          // 挖到基底 (P1): 坡面形态仍由分级剖面决定, 坑底直接削到 Zb
+          cut_to_base: !!z.cutToBase,
           // 画布上点边中点设的逐边临时坡比 —— 早先这个值写进分区行后
           // 从没进过 spec，于是「随下次应用开挖生效」是句空话
           ...zoneSlopes(z, poly),
@@ -190,6 +192,7 @@ export function useActions() {
         { viewKey: '3d' });
       if (!r) return null;
       k.afterBuild(r);
+      ui.set('stage3d', null);   // 新模型落地, 旧的逐阶段工件立即失效（P3）
       // 示例场：桌面加载完会立刻把「分阶段库容标高」「地基压缩层」覆盖成示例值，
       // 并且 _restore_param_project 把**几何**灌回表单 —— 后者是必须的：不回填
       // 的话用户接着点「应用开挖 / 一键生成三维模型」，发的就是表单里那个默认
@@ -497,21 +500,49 @@ export function useActions() {
       }, { viewKey: 'excavation', sub: SUB_DEFAULT.excavation });
     }
 
-    /** 分区开挖逐阶段（⑦）：阶段剖面的下拉依赖这次返回的阶段数 */
-    async function doPhased(stage?: string | number) {
+    /** ⑦ 用的分区表：''/null 数值一律**不发键**（内核默认=沿坡顶线随形采样）。
+        doPhased 与「导出报告」共用同一份口径，两处不再各写各的。 */
+    function phasedZones(): Array<Record<string, unknown>> {
       const e = S().exc;
-      const zones = (e.zones || []).map((z, i) => {
+      return (e.zones || []).map((z, i) => {
         const poly = parsePoints(z.poly);
-        return {
+        return compact({
           name: z.name || `分区${i + 1}`,
           poly,
-          top_z: z.topZ ?? undefined,
+          // 早先 `z.topZ ?? undefined` 把 RowsEditor 清格的 '' 原样带进 JSON,
+          // 内核 float('') 直接炸整个 action（表现为"未知错误"）
+          top_z: nu(z.topZ),
           levels: parseLevels(z.levels || e.levelsText),
           temp_n: nu(z.tempN),
           order: z.order,
+          cut_to_base: !!z.cutToBase,
           ...zoneSlopes(z, poly),
-        };
-      }).filter((z) => z.poly.length >= 3);
+        }) as Record<string, unknown>;
+      }).filter((z) => (z.poly as number[][]).length >= 3);
+    }
+
+    /** data.stages[] 与 files[] 联成阶段工件表（P3：3D/剖面切换不重跑内核） */
+    function buildStageRes(r: { data?: unknown; files?: Array<{ file: string; url: string }> }):
+      import('./run').StageRes[] | undefined {
+      const d = r.data as { stages?: Array<Record<string, any>> } | undefined;
+      if (!Array.isArray(d?.stages) || !d.stages.length) return undefined;
+      const urls = new Map<string, string>();
+      for (const f of r.files || []) urls.set(f.file, f.url);
+      return d.stages.map((s, i) => ({
+        stage: Number(s.stage ?? i),
+        meshUrl: s.mesh_file ? urls.get(String(s.mesh_file)) : undefined,
+        figUrl: s.section_png ? urls.get(String(s.section_png)) : undefined,
+        bounds: (s.mesh_bounds as Record<string, number[]> | undefined) ?? null,
+        worst: !!s.worst,
+        FsArc: s.Fs_arc ?? null,
+        removedM3: s.removed_m3 ?? null,
+        cutVolumeM3: s.cut_volume_m3 ?? null,
+      }));
+    }
+
+    /** 分区开挖逐阶段（⑦）：阶段剖面的下拉依赖这次返回的阶段数 */
+    async function doPhased(stage?: string | number) {
+      const zones = phasedZones();
       if (zones.length < 1) {
         k.log('分区开挖需要先划分开挖分区（画布切割线或手填顶点）', 'err');
         k.setStatus('分区开挖失败 | 无分区');
@@ -519,16 +550,40 @@ export function useActions() {
       }
       const p: Record<string, unknown> = { ...zoneParams(), zones };
       if (stage !== undefined && stage !== 'most') p.stage = Number(stage);
-      return k.run('分区开挖逐阶段分析', {
+      const r = await k.run('分区开挖逐阶段分析', {
         action: 'phased', params: p,
         figures: ['exc_phases', 'exc_stage'],
       }, {
         viewKey: 'excavation',
         sub: 'exc_stage',
-        extra: (r) => ({
-          stageCount: Number((r.data as any)?.stages ?? 0) || undefined,
+        extra: (rr) => ({
+          stageCount: Array.isArray((rr.data as any)?.stages)
+            ? (rr.data as any).stages.length : undefined,
+          stageRes: buildStageRes(rr as any),
         }),
       });
+      if (r) {
+        // 结果图必须**切到**子视图：FigureStage 读的是 ui 的 sub[view]，池子里的
+        // sub 没人看 —— 旧版跑完逐阶段画面仍停在上一次 excavation 的 exc_arc
+        ui.set('sub', { ...U().sub, excavation: 'exc_stage' });
+      }
+      return r;
+    }
+
+    /** 「查看阶段」下拉：工件齐了纯切 UI（3D+剖面），缺了才重跑内核 */
+    async function onStagePick(v: string) {
+      form.set('exc.stage', v);
+      const entry = k.pool['excavation'];
+      const res = entry?.stageRes || [];
+      if (res.length) {
+        const worst = res.find((s) => s.worst)?.stage;
+        const target = v === 'most' || v === '' || v === 'null'
+          ? (worst ?? res[res.length - 1]?.stage ?? null) : Number(v);
+        ui.set('stage3d', Number.isFinite(target as number) ? target : null);
+        ui.set('sub', { ...U().sub, excavation: 'exc_stage' });
+        return;
+      }
+      await doPhased(v);
     }
 
     /**
@@ -543,29 +598,53 @@ export function useActions() {
       } else {
         params.cuts = e.cuts || [];         // 内核每次都从整块轮廓按新 cuts 重切，故无需"撤销"
       }
+      // P2.1: ②分级 / ①临时坡 必须随请求一起发（桌面 _exc_rebuild_zones 也是
+      // "用当前 UI 值重建"）—— 早先只发 cuts, 内核用内置默认 [[6,2,3],[6,2,0]]
+      // 生成后再回写, 每切一刀都把用户的分级设置悄悄冲掉
+      const lv = parseLevels(e.levelsText);
+      if (lv.length) params.levels = lv;
+      const tn = nu(e.tempN);
+      if (tn !== undefined) params.temp_n = tn;
+      const prevRows = ((form.get('exc.zones') as ZoneRow[] | undefined) || [])
+        .slice();
+      const normPoly = (t: string) => (t || '').replace(/[\s;]/g, '');
       const r = await k.run('划分开挖分区', {
         action: 'zones', params, figures: [],
       }, { viewKey: 'excavation' });
       const zones = (r?.data?.zones) as any[] | undefined;
-      // 画布底图轮廓：内核回带 outline（缺省取足迹多边形/域矩形）
+      // 画布底图轮廓：内核回带 outline(s) —— 多单元场地是**多块**真实堆体
+      // 轮廓（P2.2），旧版只有单 outline；兼容读取
+      const outlines = (r?.data?.outlines) as number[][][] | undefined;
       const outline = (r?.data?.outline) as number[][] | undefined;
-      if (Array.isArray(outline) && outline.length >= 3) {
+      if (Array.isArray(outlines) && outlines.length > 1) {
+        ui.set('excOutline', outlines);
+      } else if (Array.isArray(outline) && outline.length >= 3) {
         ui.set('excOutline', outline);
       }
       if (Array.isArray(zones)) {
-        const dflt = parseLevels(S().exc.levelsText);
         // 重切后分区几何变了，逐边临时坡比**有意**不保留（旧的边与新边不是一
-        // 一对应，留着会张冠李戴）；分级/临时坡等整区参数仍按默认带入。
-        form.set('exc.zones', zones.map((z, i) => ({
-          name: String(z.name ?? `分区${i + 1}`),
-          poly: ((z.poly ?? []) as number[][]).map((p) => p.join(',')).join('\n'),
-          topZ: z.top_z ?? null,
-          levels: ((z.levels ?? dflt) as number[][])
-            .map((lv) => lv.join(',')).join(';'),
-          tempN: Number(z.temp_n ?? 2.0),
-          order: Number(z.order ?? i + 1),
-        })));
-        k.log(`已划分 ${zones.length} 个开挖分区（分区顶点由内核按切割线计算）`, 'ok');
+        // 一对应，留着会张冠李戴）；几何**没变**的行（如 4 区原地再切）则把
+        // 用户逐行改过的顶标高/分级/临时坡/挖到基底原样保留。
+        const sameGeom = zones.length === prevRows.length
+          && zones.every((z, i) => normPoly(
+            ((z.poly ?? []) as number[][]).map((p) => p.join(',')).join('\n'))
+            === normPoly(prevRows[i].poly));
+        form.set('exc.zones', zones.map((z, i) => {
+          const prev = prevRows[i];
+          return {
+            name: sameGeom && prev?.name ? prev.name : String(z.name ?? `分区${i + 1}`),
+            poly: ((z.poly ?? []) as number[][]).map((p) => p.join(',')).join('\n'),
+            topZ: sameGeom ? (prev.topZ ?? null) : (z.top_z ?? null),
+            levels: sameGeom && prev?.levels
+              ? prev.levels
+              : ((z.levels ?? []) as number[][]).map((l) => l.join(',')).join(';'),
+            tempN: sameGeom ? prev.tempN : Number(z.temp_n ?? 2.0),
+            cutToBase: sameGeom ? !!prev.cutToBase : false,
+            order: Number(z.order ?? i + 1),
+          };
+        }));
+        k.log(`已划分 ${zones.length} 个开挖分区（分区顶点由内核按切割线计算；`
+          + '分级/临时坡随请求下发，不再被默认值覆盖）', 'ok');
       }
       return r;
     }
@@ -739,6 +818,12 @@ export function useActions() {
           pollution: true, pollution_params: p,
           excavation: Boolean((S().exc.layers || []).length),
           excavation_params: zoneParams(),
+          // S3.6: 内核 h_export 只在 `phased && zones && layers` 三者齐时才算
+          // 阶段表 —— 早先一个都没传, Word/Excel 里从来没有逐阶段开挖结果
+          zones: phasedZones(),
+          phased: phasedZones().length >= 2,
+          stage: (S().exc.stage && S().exc.stage !== 'most')
+            ? Number(S().exc.stage) : undefined,
         },
         figures: [],
       }, { viewKey: '3d' });
@@ -877,7 +962,7 @@ export function useActions() {
       // 污染
       doPollution, listPollCells,
       // 开挖
-      doExcCalc, doPhased, refreshZones, zoneParams,
+      doExcCalc, doPhased, onStagePick, refreshZones, zoneParams,
       // 视图
       ensureRendered, overlaySpec, overlayParams,
       // 文件

@@ -98,6 +98,12 @@ function ToolCallCard({ tc }: { tc: ToolCall }) {
   const MODEL_GRADE_COLOR: Record<string, string> = {
     green: '#16a34a', blue: '#2563eb', yellow: '#ca8a04', orange: '#ea580c', red: '#dc2626',
   };
+  // 工具卡片 grade 文案。v5.5：Fs 分档统一后 ≥1.5 记为 blue，橙色档也会出现，
+  // 原先这两个值走 String(grade) 直接漏出英文。
+  const GRADE_TEXT: Record<string, string> = {
+    red: '● 不满足/高风险', orange: '● 高风险', yellow: '● 需关注', blue: '● 稳定/低风险', green: '● 满足',
+  };
+  const gradeText = (g?: string) => (g ? GRADE_TEXT[g] ?? String(g) : '');
 
   return (
     <div
@@ -251,7 +257,7 @@ function ToolCallCard({ tc }: { tc: ToolCall }) {
                         )}
                         {run?.grade && (
                           <span className="chip" style={{ color: MODEL_GRADE_COLOR[run.grade] ?? 'var(--text-secondary)', fontWeight: 700 }}>
-                            {run.grade === 'red' ? '● 不满足/高风险' : run.grade === 'yellow' ? '● 需关注' : run.grade === 'green' ? '● 满足' : String(run.grade)}
+                            {gradeText(run.grade)}
                           </span>
                         )}
                         {typeof run?.elapsedMs === 'number' && (

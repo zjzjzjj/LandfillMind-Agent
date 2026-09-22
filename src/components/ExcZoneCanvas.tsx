@@ -15,7 +15,8 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 export interface ZonePoly { name: string; poly: number[][] }
 
 interface Props {
-  outline: number[][] | null;
+  /** 场地轮廓：单块 (number[][]) 或多块 (多单元场地, P2.2 内核回带 outlines) */
+  outline: number[][] | number[][][] | null;
   zones: ZonePoly[];
   cuts: number[][][];                       // [[ [x0,y0],[x1,y1] ], ...]
   mode: 'cut' | 'slope';
@@ -36,17 +37,23 @@ export default function ExcZoneCanvas({
 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [drag, setDrag] = useState<number[][] | null>(null);
+  // outline 归一成多块：首点是数对 → 就是单块
+  const outlines: number[][][] = outline && outline.length
+    ? (Array.isArray(outline[0]?.[0]) ? outline as number[][][] : [outline as number[][]])
+    : [];
 
   // viewBox：outline ∪ zones 的并集 bbox，外扩 6%
   const box = useMemo(() => {
-    const pts: number[][] = [...(outline ?? []), ...zones.flatMap((z) => z.poly)];
+    const pts: number[][] = [
+      ...((outline as number[][][]) ?? outlines).flat(),
+      ...zones.flatMap((z) => z.poly)];
     if (!pts.length) return { x: -100, y: -100, w: 200, h: 200 };
     const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
     const x0 = Math.min(...xs), x1 = Math.max(...xs);
     const y0 = Math.min(...ys), y1 = Math.max(...ys);
     const mx = Math.max((x1 - x0) * 0.06, 5), my = Math.max((y1 - y0) * 0.06, 5);
     return { x: x0 - mx, y: y0 - my, w: (x1 - x0) + mx * 2, h: (y1 - y0) + my * 2 };
-  }, [outline, zones]);
+  }, [outline, zones, outlines.length]);
 
   const toWorld = useCallback((clientX: number, clientY: number): number[] => {
     const el = svgRef.current;
@@ -86,13 +93,13 @@ export default function ExcZoneCanvas({
                if (len > box.w * 0.02) onAddCut([drag[0], end]);
                setDrag(null);
              }}>
-          {/* 底图轮廓：虚线 #8d6e63 */}
-          {outline && outline.length >= 3 && (
-            <polygon points={polyPts(outline)}
+          {/* 底图轮廓：虚线 #8d6e63（多单元场地是**多块**轮廓, P2.2） */}
+          {outlines.map((o, oi) => o && o.length >= 3 && (
+            <polygon key={oi} points={polyPts(o)}
                      fill="rgba(141,110,99,0.06)" stroke={C_OUTLINE}
                      strokeWidth={sw * 1.2}
                      strokeDasharray={`${box.w / 90} ${box.w / 180}`} />
-          )}
+          ))}
           {/* 分区多边形 + 边中点（设坡比模式可点） */}
           {zones.map((z, i) => (
             <g key={`${z.name}-${i}`}>
@@ -154,7 +161,7 @@ export default function ExcZoneCanvas({
           ? '✂ 切割中：在图上按住拖一条直线（每刀把现有分区各切一次）'
           : '⌣ 设坡比中：点分区边中点的黄点，为该边指定逐边坡比 1:n'}
         <span className="ml-2">
-          切割线 {cuts.length} 条 · 分区 {zones.length} 个 · 底图 {outline ? 1 : 0} 块轮廓
+          切割线 {cuts.length} 条 · 分区 {zones.length} 个 · 底图 {outlines.length} 块轮廓
           {totalVerts ? ` · 顶点 ${totalVerts} 个` : ''}
         </span>
       </p>

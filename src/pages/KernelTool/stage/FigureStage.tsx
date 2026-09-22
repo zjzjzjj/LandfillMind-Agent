@@ -117,12 +117,24 @@ export default function FigureStage({
 
   const is3d = view === '3d';
   const kernelFig = entry?.figs?.find((f) => f.key === KERNEL_3D_FIG);
+  // ---- 逐阶段工件 (P3)：ui.stage3d 命中时 3D 吃该阶段 OBJ、阶段剖面吃该
+  // 阶段 PNG —— 下拉切换变成纯 UI 操作, 不再重跑内核 ----
+  const stage3dIdx = useUiValue<number | null>('stage3d');
+  const stageRes = k.pool['excavation']?.stageRes || [];
+  const stageHit = stage3dIdx != null
+    ? stageRes.find((s) => s.stage === stage3dIdx) : undefined;
+  const stageFigUrl = !is3d && view === 'excavation'
+    && (sub[view] || 'exc_phases') === 'exc_stage'
+    ? stageHit?.figUrl : undefined;
 
   return (
     <div className="relative flex-1 min-h-0" style={{ background: 'var(--bg-base)' }}>
       {is3d && !kernelImage && (
         <KernelMeshView
           reloadKey={k.meshKey}
+          sid={k.sid}
+          meshUrl={stageHit?.meshUrl ?? null}
+          meshBounds={stageHit?.bounds ?? null}
           wire={wire}
           clipOn={clipOn}
           clipFrac={clipFrac}
@@ -148,8 +160,8 @@ export default function FigureStage({
         )
       )}
 
-      {!is3d && (curFig ? (
-        <img src={curFig.url} alt={curFig.label}
+      {!is3d && (curFig || stageFigUrl ? (
+        <img src={stageFigUrl ?? curFig!.url} alt={stageHit ? `阶段 ${stageHit.stage} 剖面` : (curFig?.label ?? '')}
              className="absolute inset-0 w-full h-full object-contain" />
       ) : (
         <Placeholder text={`「${VIEW_LABEL[view] || view}」还没有结果`} />

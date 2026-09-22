@@ -1,5 +1,85 @@
 # Changelog · LandfillMind 填埋场全周期智能体
 
+## v5.5（2026-09-22 · 数值口径统一：同一工况不再出两个结论）
+
+四类「同一输入、不同模块不同答案」的口径分裂逐项收口，全部落在确定性内核层，不改任何 LLM 提示词。
+
+- **Fs 分档单一来源**: 新增 `calculate.gradeFromFs()`（<1.0 红 / <1.2 橙 / <1.5 黄 / ≥1.5 蓝，
+  另出 `fsBandLabel` 失稳·欠稳定·基本稳定·稳定）。此前四处各自判档——`slopeFs` 黄档止于 1.3
+  且 ≥1.3 记 green、`calculateStabilityFactor` 黄档止于 1.5 记 blue、`augment.runCalc` 用
+  `Fs>=1.3 ? green : red` 二值、`diagnose` 对直给 Fs 再写一条链 → **1.3~1.5 区间同一工况
+  在计算中心判「满足/绿」、在快诊判「基本稳定/黄」**。规范判据本身改由 `FS_REQUIRED=1.30`
+  独立表达，analysis 文案同时给「运行要求 ≥1.30 / 良好 ≥1.50」。前端 `ChatPage` 补 blue/orange
+  中文标签（此前 `String(grade)` 直接漏英文）。
+- **计算器实现三份收敛**: `augment.runCalc` 原本按位置参数自调 `calculate.ts` 并自带一套默认值
+  （slopeFs 取 γ=12，注册表取 γ=10）→ 同一句提问在引用卡片与工具卡片上算出两个 Fs；现整体委托
+  `CALC_REGISTRY`。`CALC_FORMULAS` 在 augment 与 routes/calc 各存一份手抄，改为转发单一来源。
+  `detectCalcIntent` 的 `soilScreen.cls` 由 '1'/'2' 改发注册表认得的完整档位串（否则委托后
+  一律落到二类档）。
+- **ρ 量纲错**: `capacity` 按 **t/m³** 使用 rho（`W=V·ρ` 求质量、`meetsStandard=rho>=0.9`），
+  而元数据标 kN/m³ 且 default 10 / min 5 → **任何合法输入都 ≥0.9，达标判定永不失败**，总质量
+  虚高 10 倍（10ha×30m 此前报 3000 万吨，现报 300 万吨）。单位改 t/m³、default 1.0、
+  min 0.5、max 1.5、step 0.05，同步 routes/calc 默认值、`detectCalcIntent`、`calcPresets`
+  三套预设。T 只依赖体积，使用年限不受影响。
+- **水位参考面统一**: `waterLevel` 是「库底以下埋深」（监测值），`stabilityDetail` 要的是
+  「自堆顶起算埋深」，此前 `diagnose` 与 `domains` 都把前者**直传**后者——H=28、1:3、
+  水位在库底以下 2.5 m 的场地按 92% 浸没计浮托，Fs 从 1.46 被压到 0.18（黄 → 红）。
+  新增唯一转换点 `calculate.waterDepthFromTop(H, baseDepth)`（水位在库底以下→堆体不受浮托取 H；
+  涌入库内按浸没高度折算），快诊计算书步骤如实写明换算来源。参数标签改「水位埋深（自堆顶起算）」
+  并加口径提示。缺测代表值统一到 `WATER_DEPTH_REPRESENTATIVE=10`（此前快诊按 0 m 全浸没、
+  领域 Agent 按 10 m，同一缺测场地两个模块互相打脸）。
+- **domains 交叉核对复位**: 边坡领域 Agent 一条链喂 `waterLevelForCalc`、另一条喂 `waterLevel`，
+  再把两个 Fs 相比对 → 恒触发「计算器口径与稳定内核不一致，请核查参数换算」误报。现两条链
+  取同一 `w`，该守卫恢复有效。
+- **规范登记表纠错**: `standards.ts` 记「CJJ 176 已被 CJJ/T 273-2019 部分替代」——
+  **CJJ/T 273-2019 实为《橡胶沥青路面技术标准》**，与填埋场无关；该错误还写进 `kb.ts` 的
+  slopeStable 引用串，随对话回复直达用户（实测引用串可见）。已删除，`related` 里两处
+  `CJJ/T 273` 改指 GB/T 18772-2017；HJ 25 现行版本按知识库核实口径改为
+  「25.1~25.4-2019、25.5-2018」，25.6 未核实不作断言。
+- **前端元数据去重**: `DesignPage` 的 `PARAMS_MAP` 是 `server/calc-meta.ts` 的整份手抄
+  （ρ 的单位错误就是两份不同步的产物），改为直接引用权威定义，页面 −109 行；
+  `ParamField` 开始消费 `step`。
+- **useChat 两个交互 bug**: ①定稿 `finalMsg` 漏带 `followUps`，追问卡片在流结束瞬间消失；
+  ②`error` 事件往 `assistantContent` 追加，而下一个 `text` 事件用 `cleanAssistantText(assistantRaw)`
+  整体重算正文把它抹掉。改为 notice 单独累积、`setContent()` 统一合成。
+- **文档对齐实现**: README 原写「Windows 本机可另调原生 ogs.exe 做有限元校核」——三场景均已挂
+  `computeOnly`，`runOgsScenario` 在解析分支即 return，求解器分支不可达。改为如实标注「预留未接入」。
+- 验证: typecheck + build 绿；`multiagent-smoke` 20/20；Fs 1.45 在 slopeFs / 稳定内核 / 快诊
+  三条链同为 yellow；`POST /api/calc/slopeFs` 与 `/api/tools/meta` 实测已回新口径；浏览器实测
+  计算中心表单（ρ t/m³ 0.5~1.5 step 0.05、水位标签）与库容计算 W=3000000t 正确、
+  追问卡片流结束后仍在 DOM。
+
+---
+
+## v5.4（2026-09-22 · 开挖模块大修，配套内核 v1.7.1 开挖链路）
+
+三大症状（划分不精确 / 开挖完模型没挖完 / 分阶段结果看不到不正确）逐项闭环：
+
+- **划分**: `refreshZones` 把 ②分级/①临时坡随请求下发（旧版只发 cuts，内核默认
+  `[[6,2,3],[6,2,0]]`+temp_n=2 回写覆盖用户设置，切一刀冲一次）；几何未变的行
+  按序保留顶标高/分级/临时坡/挖到基底；画布底图支持多块真实轮廓（旧为
+  cells[0]/含边距的域矩形）；面板 ① hint 注明边界按网格取整 ±半格。
+- **建模消毒器补漏**: `normalizeL3dSpec` 此前重建分区只留 name/poly/top_z/levels
+  —— `temp_n/order/slopes/cut_to_base` 在服务器就被丢掉，界面上设的临时坡、
+  开挖顺序、逐边坡比从未到过内核。新增 `normalizeL3dZonesParam` 给
+  phased/excavation/export 的 zones+stage 消毒（`top_z:''` → 键消失，旧版把
+  `""` 送进 Python `float('')` 炸成"未知错误"）。
+- **挖到基底**: 分区表新勾选列 `cutToBase`（chk 列型）→ `cut_to_base`；坡面
+  按分级剖面、坑底直接削到基底。`buildSpec/doPhased` 同发。
+- **分阶段**: `stageCount` 从 `data.stages` 数组推导（旧两条判据全落空，两个
+  阶段下拉恒死）；选项枚举修越界（0..K 共 stageCount 项）；跑完自动把子视图
+  切到「阶段剖面」（旧版画面永远停在上一次的 exc_arc）；「查看阶段」下拉改
+  `onStagePick` —— 工件齐时纯切 UI（三维换 stage-k.obj + 剖面换对应 PNG），
+  不再每次重跑内核；`doPhased` 的 zone 走 compact（'' 不再发键）。
+- **3D**: `KernelMeshView` 收 `sid` 并把 /mesh-info、/mesh、viewport POST 全部
+  按 sid 解析（旧版按全局活动会话指针，聊天路径建个模就能把本页换成未开挖
+  模型）；新 `meshUrl/meshBounds` 通道加载阶段网格；routes 白名单加 `.obj`。
+  内核侧坑底透明洞/满高 fringe 修复见内核 CHANGELOG v1.7.1。
+- **导出**: `doExportReport` 补 `zones/phased/stage`（旧版 Word/Excel 里从来没有
+  逐阶段结果）。
+- 验证: typecheck+build 绿；k3d-check / check:toe(49) / 内核五套件 (439+35+257+
+  117+448) 全过；内核行为探针 28/28（F:\Claude Code\开挖模块修复_260922）。
+
 ## v5.3（2026-09-20 · 两个 3D 入口合并为「三维建模分析」+ 桌面工具 1:1 对齐）
 
 > v5.2 留下了两个 3D 入口：「3D 模拟（真实模型）」是纯查看器，「3D 建模工具」是

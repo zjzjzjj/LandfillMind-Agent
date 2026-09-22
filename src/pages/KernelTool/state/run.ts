@@ -15,6 +15,20 @@ import { kernelRun } from './api';
 export type LogKind = 'info' | 'ok' | 'warn' | 'err';
 export interface LogLine { t: string; kind: LogKind; text: string }
 
+/** 逐阶段开挖的阶段工件（analyze_excavation_phased 的 files + data.stages 联成） */
+export interface StageRes {
+  stage: number;
+  /** 该阶段的三维网格 OBJ（/api/kernel3d/file/…/stage-k.obj） */
+  meshUrl?: string;
+  /** 该阶段剖面 PNG（图内嵌阶段号，切换不重跑内核） */
+  figUrl?: string;
+  bounds?: Record<string, number[]> | null;
+  worst?: boolean;
+  FsArc?: number | null;
+  removedM3?: number | null;
+  cutVolumeM3?: number | null;
+}
+
 export interface PoolEntry {
   figs: Fig[];
   /** 当前子视图键（桌面子视图条上的键） */
@@ -31,8 +45,10 @@ export interface PoolEntry {
     gas_year_used?: number | null; plume_day_used?: number | null;
   } | null;
   files?: Array<{ kind: string; file: string; url: string }>;
-  /** 逐阶段开挖的阶段数（阶段下拉用） */
+  /** 逐阶段开挖的阶段数（含阶段 0 = 开挖前，即 K+1 项） */
   stageCount?: number;
+  /** 逐阶段工件（P3：阶段 OBJ/剖面图 URL —— 下拉切 3D 不再重跑内核） */
+  stageRes?: StageRes[];
   /** 上一次成功的调用（供「导出当前图」按原参数重算 + 缓存） */
   lastRun?: { action: string; params?: Record<string, unknown>; figures?: string[] | null };
   /** 出版件导出的缓存（同一视图重复导出直接下载，不重算内核） */
@@ -179,7 +195,11 @@ export function useKernelRun() {
         timeOpts: r.data?.time_options ?? null,
         files: r.files,
         stageCount: typeof r.data?.stages === 'number' ? r.data.stages
-          : (Array.isArray(r.data?.stage_table) ? r.data.stage_table.length : undefined),
+          // ⚠ phased 的 data.stages 是**阶段对象数组** (含阶段 0)，不是数字 ——
+          // 旧判据两条全落空，stageCount 恒 undefined，两个阶段下拉都是死的
+          : (Array.isArray(r.data?.stages) ? (r.data.stages as unknown[]).length
+             : (Array.isArray(r.data?.stage_table) ? r.data.stage_table.length
+                : undefined)),
         lastRun: { action: body.action, params: body.params, figures: body.figures },
         lastAt: Date.now(),
         ...(map.extra ? map.extra(r) : {}),
@@ -203,6 +223,7 @@ export function useKernelRun() {
             timeOpts: entry.timeOpts ?? prev?.timeOpts ?? null,
             files: entry.files?.length ? entry.files : prev?.files,
             stageCount: entry.stageCount ?? prev?.stageCount,
+            stageRes: entry.stageRes ?? prev?.stageRes,
             sub: prev?.sub && !map.sub ? prev.sub : entry.sub,
             exports: {},   // 结果变了，旧的出版件缓存作废
           },

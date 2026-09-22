@@ -34,6 +34,8 @@ const TYPES: Record<string, string> = {
   '.txt': 'text/plain; charset=utf-8',
   '.md': 'text/markdown; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
+  // 逐阶段网格 (P3)：stage-k.obj 走同一条白名单路由供给查看器
+  '.obj': 'text/plain; charset=utf-8',
 };
 
 export function kernel3dRouter(): Router {
@@ -53,10 +55,15 @@ export function kernel3dRouter(): Router {
     }
   });
 
-  /** 真实三维查看器：活动会话 OBJ（改过模自动重导，刷新即最新） */
-  r.get('/api/kernel3d/mesh/active', async (_req, res) => {
+  /** 真实三维查看器：活动会话 OBJ（改过模自动重导，刷新即最新）。
+   *  ⚠ 认 ?sid=：不带的话按**全局活动会话**指针解析 —— 聊天路径另建一个模型
+   *  就能把工具页查看器悄悄换成未开挖的那一份 (S2.5)。无 sid 保留旧回退。 */
+  r.get('/api/kernel3d/mesh/active', async (req, res) => {
     try {
-      const m = await ensureKernelMesh();
+      const want = String(req.query.sid ?? '').trim();
+      const sid = /^[A-Za-z0-9._-]{1,64}$/.test(want) && hasSessionProject(want)
+        ? want : undefined;
+      const m = await ensureKernelMesh(sid);
       if (!m.ok) return res.status(422).json({ ok: false, error: m.error });
       res.setHeader('Content-Type', 'text/plain; charset=utf-8');
       res.setHeader('X-Kernel-Refreshed', m.refreshed ? '1' : '0');

@@ -159,7 +159,7 @@ export function sensitivityScan(ctx: DomainCtx): { baseFs: number; text: string;
   const s = d.site;
   const H = n(s.landfillHeight) ?? 25;
   const angle = n(s.slopeAngle) ?? 30;
-  const w = n(s.waterLevelForCalc) ?? 10;
+  const w = n(s.waterLevelForCalc) ?? calc.WATER_DEPTH_REPRESENTATIVE;
   const gamma = n(s.slopeGamma) ?? 11;
   const phi = n(s.slopePhi) ?? 35;
   const c = n(s.slopeC) ?? 15;

@@ -51,14 +51,15 @@ execTool(name, args, ctx)  ← 统一调度器（server/tools.ts）
 
 ## 稳定化计算（确定性数值内核）
 
-> 数值内核以 OpenGeoSys 5.5 官方算例（Data XCFei 三案例的 ADM1 生化反应模型）为基准复刻标定；Windows 本机可另调原生 `ogs.exe` 做有限元校核。全部场景**秒出结果、跨平台可部署**（Render Linux 容器同样可用）。
+> 数值内核以 OpenGeoSys 5.5 官方算例（Data XCFei 三案例的 ADM1 生化反应模型）为基准复刻标定，全部为**秒出的确定性解析/ODE 内核**，跨平台可部署（Render Linux 容器同样可用）。
+> 原生 `ogs.exe` 有限元校核路径**目前未启用**：三场景均已挂 `computeOnly` 解析内核，`runOgsScenario` 在解析分支即返回，模板与求解器调用代码保留待接（`getOgsStatus()` 如实报 `solverNative: false`）。
 
 - **三大场景**：
   - `gas-production` 填埋气产气量 — ADM1 式厌氧产甲烷模型，CH₄/CO₂/H₂S/H₂ 全组分日分辨率曲线、累计产量、占比、发电/减排潜力
   - `degradation` 有机物降解 — 易/难降解纤维素、VFA、细菌浓度随时间的降解动力学曲线
   - `settlement` 堆体固结沉降 — Terzaghi 一维固结解析解 S(t)=S∞·[1−exp(−t/τ)]，刚度越大固结越快
 - **对话触发**：智能体对话里输入 `模拟产气` / `有机物降解曲线` / `沉降模拟` → `run_ogs_scenario` 工具自动执行并注入 AI 回答
-- **原生求解器（可选）**：Windows 下用仓库内置 `OGS/bin/ogs.exe`；Linux 容器自动降级为解析内核并在状态徽标注明
+- **原生求解器（预留，未接入）**：`OGS/bin/ogs.exe` 与 `OGS/scenarios/*` 模板仍在仓库内，但当前三场景全部走 `computeOnly` 解析内核，不会 spawn 求解器；状态徽标如实显示 `solverNative: false`
 
 ---
 
@@ -89,7 +90,8 @@ npm install
 
 # 2. 配置 API Key
 cp .env.example .env
-# 编辑 .env，填入 CODEBUDDY_API_KEY 或 DEEPSEEK_API_KEY
+# 编辑 .env，至少填入 OPENAI_API_KEY（智谱 GLM 免费档，默认通道）
+# 可选：DEEPSEEK_API_KEY / OPENROUTER_API_KEY —— 填了才会在前端模型下拉里出现
 
 # 3. 启动（同时运行前后端）
 npm run dev
@@ -113,11 +115,30 @@ docker run -d -p 3000:3000 \
 
 ---
 
+### 模型通道（server/llm.ts）
+
+三个 OpenAI 兼容通道并存，**填哪个 Key 哪个通道就出现**在前端模型下拉里；未填的通道整体不注册。
+
+| 通道 | 启用条件 | 默认模型 | 并发 | `kind` |
+|------|---------|---------|------|--------|
+| 智谱 GLM 直连 | `OPENAI_API_KEY` | `glm-4-flash-250414` | 串行 1（免费档限制） | `glm` |
+| OpenRouter | `OPENROUTER_API_KEY` | `dots-studio/dots-3-note-preview:free` | 信号量 3 | `openrouter` |
+| DeepSeek 官方直连 | `DEEPSEEK_API_KEY` | `deepseek-flash` | 信号量 3 | `compat` |
+
+路由按**模型名前缀**判定：`deepseek/*`、`nvidia/*`、`z-ai/*`、`dots-studio/*` → OpenRouter；`glm*` → GLM 直连；裸 `deepseek-*` → DeepSeek 直连。模型名不在目标通道白名单内时由 `modelForCfg()` 归一到该通道默认模型，避免"张冠李戴"发到错误 base URL。
+
+**DeepSeek 侧的两条硬约束**（踩过坑，勿改回去）：
+
+1. **模型锁定 `deepseek-flash`**（`DEEPSEEK_ALLOWED_MODELS`）。`api.deepseek.com` 会把旧名 `deepseek-chat` 静默别名到 flash，但代码侧仍硬性收口 —— 历史会话里存的旧模型名、`DEEPSEEK_MODEL` 填的越界值，一律归一，不依赖上游兜底。
+2. **必须显式关思考**（`thinking: {type:'disabled'}`，与智谱同参数名）。`deepseek-flash` 是混合思考模型，实测 `reasoning_tokens` 会精确吃满 `max_tokens`、`finish_reason=length`、`message.content` 恒为空串 —— 表现为"回答完全空白"，且把 `max_tokens` 从 1500 提到 4000 只会换来更多思考文本（9862 字）而正文仍为 0。`enable_thinking:false` / `reasoning:false` 实测无效。统一由 `applyThinkingOff()` / `thinkingOff()` 处理，四个调用点（对话流式、非流式补全、快诊 JSON、pilot 基准）共用。
+
+---
+
 ## 技术栈
 
 - **前端**：React 18 + TypeScript + Vite 5 + Tailwind CSS + Framer Motion + Three.js
 - **后端**：Node.js + Express + tsx + sql.js (SQLite WASM)
-- **AI**：智谱 GLM 直连（默认免费档）+ OpenRouter 可选（并行信号量 3 路）；CodeBuddy Agent SDK 已预埋接口待 CodeBuddy 主通道启用
+- **AI**：三通道 —— 智谱 GLM 直连（默认免费档，串行队列）、OpenRouter 可选（信号量 3 路）、DeepSeek 官方直连可选（信号量 3 路，模型锁定 `deepseek-flash`）；CodeBuddy Agent SDK 已预埋接口待 CodeBuddy 主通道启用
 - **通信**：SSE 流式推送
 
 ---
@@ -125,7 +146,9 @@ docker run -d -p 3000:3000 \
 ## 规范依据
 
 覆盖 30+ 本国家/行业标准（版本口径与 knowledge-base 一致）：
-`GB 16889-2008`（2024 版已发布，KB 保留 2008 关键阈值）· `CJJ 176-2012`（2025-09 废止，Fs 阈值仍被工程实践引用，见表 6.1.4 分档）· `HJ 25.1~25.6`（HJ 25.1/25.2 现行 2019 版）· `GB 36600-2018` · `GB/T 14848-2017` · `HJ 1106-2020` · `GB 55038-2025` · `AQ 4202-2008`
+`GB 16889-2008`（2024 版已发布，KB 保留 2008 关键阈值）· `CJJ 176-2012`（2025-09 废止，Fs 阈值仍被工程实践引用，见表 6.1.4 分档）· `HJ 25.1~25.4-2019、HJ 25.5-2018`（HJ 25.6 的编号与年份在正式文本核对前不作断言）· `GB 36600-2018` · `GB/T 14848-2017` · `HJ 1106-2020` · `GB 55038-2025` · `AQ 4202-2008`
+
+> 版本状态以 `server/standards.ts` 的登记表为准。v5.5 前该表把 `CJJ/T 273-2019`（实为《橡胶沥青路面技术标准》）误记为 CJJ 176 的替代标准，并已随 KB 引用文本进入对话回复，现已删除；未经核实的替代/废止关系一律不再写入引用。
 
 ---
 

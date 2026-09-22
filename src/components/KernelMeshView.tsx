@@ -57,6 +57,12 @@ interface Props {
   /** 命令式句柄回传 */
   apiRef?: { current: MeshApi | null };
   onStatus?: (s: MeshStatus) => void;
+  /** 本工具页会话 id —— mesh 端点按它取, 不被其它会话 (如聊天) 的
+      "活动模型"悄悄劫持 (S2.5) */
+  sid?: string;
+  /** 逐阶段网格 (P3): 给了就直接加载这个 URL, 不摸活动模型、不 POST viewport */
+  meshUrl?: string | null;
+  meshBounds?: Record<string, number[]> | null;
 }
 
 /** 实体三组（老调用方只认识这三个） */
@@ -151,7 +157,7 @@ function sceneColors(el: HTMLElement) {
 export default function KernelMeshView({
   reloadKey = 0, fitToken = 0, wire = false, clipOn = false, clipFrac = 0.5,
   groups, view, zexag = 1, overlaySpec = null, overlayParams = null,
-  paused = false, apiRef, onStatus,
+  paused = false, apiRef, onStatus, sid, meshUrl = null, meshBounds = null,
 }: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
   const stRef = useRef<St | null>(null);
@@ -247,30 +253,8 @@ export default function KernelMeshView({
   const load = useCallback(async () => {
     setPhase('loading');
     emit({ phase: 'loading', err: '', info: null, refreshed: false });
-    try {
-      // 叠加层变了 → 先让服务端按新规格重导（物理层由内核复用分析侧构造）
-      let refreshed = false;
-      if (overlaySpec && Object.keys(overlaySpec).length) {
-        const vr = await fetch('/api/kernel3d/mesh/viewport', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ overlay: overlaySpec, params: overlayParams }),
-        });
-        if (vr.ok) refreshed = Boolean((await vr.json())?.refreshed);
-      }
-      const infoRes = await fetch('/api/kernel3d/mesh-info/active');
-      if (infoRes.status === 422) {
-        const msg = (await infoRes.json()).error || '暂无活动三维模型';
-        setPhase('empty');
-        emit({ phase: 'empty', err: msg, info: null, refreshed: false });
-        return;
-      }
-      const meta: MeshInfo = (await infoRes.json())?.info || {};
-      const meshRes = await fetch('/api/kernel3d/mesh/active');
-      if (!meshRes.ok) throw new Error(`网格加载失败 HTTP ${meshRes.status}`);
-      refreshed = refreshed || meshRes.headers.get('X-Kernel-Refreshed') === '1';
-      const parsed = new OBJLoader().parse(await meshRes.text());
-
+    const mountModel = (parsed: THREE.Group, meta: MeshInfo,
+                        refreshed: boolean) => {
       const st = ensureScene(meta.bounds);
       if (!st) return;
       st.bounds = meta.bounds;
@@ -311,6 +295,46 @@ export default function KernelMeshView({
       fitTo(st, 'bird');   // 新模型载入：贴边取景，消灭四周空白
       setPhase('ready');
       emit({ phase: 'ready', err: '', info: meta, refreshed });
+    };
+    try {
+      // ---- 逐阶段网格 (P3)：给了 meshUrl 就直接吃 run 目录里的 stage-k.obj，
+      // 不摸活动模型、不 POST viewport（阶段帧没有叠加层）----
+      if (meshUrl) {
+        const mr = await fetch(meshUrl);
+        if (!mr.ok) throw new Error(`阶段网格加载失败 HTTP ${mr.status}`);
+        mountModel(new OBJLoader().parse(await mr.text()),
+          { bounds: (meshBounds || undefined) as MeshInfo['bounds'] }, false);
+        return;
+      }
+      // 叠加层变了 → 先让服务端按新规格重导（物理层由内核复用分析侧构造）
+      let refreshed = false;
+      if (overlaySpec && Object.keys(overlaySpec).length) {
+        const vr = await fetch('/api/kernel3d/mesh/viewport', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            overlay: overlaySpec, params: overlayParams,
+            ...(sid ? { sid } : {}),
+          }),
+        });
+        if (vr.ok) refreshed = Boolean((await vr.json())?.refreshed);
+      }
+      // ⚠ sid 必须带上：早先按**全局活动会话**解析 —— 聊天路径另建一个模型
+      // 就能把本页查看器悄悄换成未开挖的那一份 (S2.5)
+      const sq = sid ? `?sid=${encodeURIComponent(sid)}` : '';
+      const infoRes = await fetch(`/api/kernel3d/mesh-info/active${sq}`);
+      if (infoRes.status === 422) {
+        const msg = (await infoRes.json()).error || '暂无活动三维模型';
+        setPhase('empty');
+        emit({ phase: 'empty', err: msg, info: null, refreshed: false });
+        return;
+      }
+      const meta: MeshInfo = (await infoRes.json())?.info || {};
+      const meshRes = await fetch(`/api/kernel3d/mesh/active${sq}`);
+      if (!meshRes.ok) throw new Error(`网格加载失败 HTTP ${meshRes.status}`);
+      refreshed = refreshed || meshRes.headers.get('X-Kernel-Refreshed') === '1';
+      const parsed = new OBJLoader().parse(await meshRes.text());
+      mountModel(parsed, meta, refreshed);
     } catch (e: any) {
       const msg = e?.message ?? '三维查看器异常';
       setPhase('error');
@@ -318,7 +342,8 @@ export default function KernelMeshView({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ensureScene, emit, JSON.stringify(overlaySpec ?? null),
-      JSON.stringify(overlayParams ?? null)]);
+      JSON.stringify(overlayParams ?? null), meshUrl,
+      JSON.stringify(meshBounds ?? null), sid]);
 
   useEffect(() => { void load(); }, [load, reloadKey]);
 

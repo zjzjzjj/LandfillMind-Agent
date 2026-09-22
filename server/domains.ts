@@ -321,10 +321,12 @@ const slopeSpec: DomainSpec = {
     // —— 避免用估算值去触发「渗滤液/地下水位」监测隐患判定
     const measuredW = n(s.waterLevel);
     if (measuredW !== undefined) {
-      s.waterLevelForCalc = measuredW;
+      // v5.5：waterLevel 是「库底以下埋深」，内核要「自堆顶起算埋深」，参考面相反必须换算
+      s.waterLevelForCalc = calc.waterDepthFromTop(n(s.landfillHeight) ?? 25, measuredW);
+      steps.push(`稳定计算水位由监测值 ${measuredW} m（库底${measuredW >= 0 ? `以下 ${measuredW} m → 堆体不受地下水浮托` : `高出库底 ${(-measuredW)} m`}）换算为自堆顶起算 ${s.waterLevelForCalc} m`);
     } else {
-      s.waterLevelForCalc = 10;
-      steps.push('水位埋深未实测，稳定计算按埋深 10 m 的代表工况代入（ESTIMATED，不参与水位监测隐患判定）');
+      s.waterLevelForCalc = calc.WATER_DEPTH_REPRESENTATIVE;
+      steps.push(`水位埋深未实测，稳定计算按埋深 ${calc.WATER_DEPTH_REPRESENTATIVE} m 的代表工况代入（ESTIMATED，不参与水位监测隐患判定）`);
     }
     return steps;
   },
@@ -335,7 +337,7 @@ const slopeSpec: DomainSpec = {
     const phi = n(s.slopePhi) ?? 35;
     const H = n(s.landfillHeight) ?? 25;
     const angle = n(s.slopeAngle) ?? 30;
-    const w = n(s.waterLevelForCalc) ?? 10;
+    const w = n(s.waterLevelForCalc) ?? calc.WATER_DEPTH_REPRESENTATIVE;
     // 计算中心口径：β 传坡比倒数（1:β）；v5.1 起 slopeFs 已与隐患内核统一，两者必然同值
     const beta = Math.round(1 / Math.tan(angle * Math.PI / 180) * 100) / 100;
     const fsEv = await callCalc('slopeFs', [
@@ -344,10 +346,12 @@ const slopeSpec: DomainSpec = {
       param(ctx, 'gamma', '垃圾重度 γ', 'kN/m³', 'slopeGamma', 11, '国内填埋场垃圾重度典型值 10~12'),
       param(ctx, 'c', '黏聚力 c', 'kPa', 'slopeC', 15, '垃圾体黏聚力典型值 10~20'),
       param(ctx, 'phi', '内摩擦角 φ', '°', 'slopePhi', 35, '垃圾体内摩擦角典型值 30~40'),
-      param(ctx, 'waterTableDepth', '水位埋深', 'm', 'waterLevel', 10, '缺测时按埋深 10 m 代表工况（仅用于稳定计算）'),
+      derived('waterTableDepth', '稳定计算水位埋深（自堆顶起算）', 'm', w, '由 prepare 阶段从监测水位换算或缺测代表值；与下方交叉核对用同一数值'),
     ], ctx.sessionId);
     const kbEv = await callKb('边坡稳定 安全系数 Fs CJJ 176 运行要求', ctx.sessionId);
-    // 交叉核对：计算器口径与隐患内核口径（v5.1 已统一，若不一致说明参数换算有问题，须暴露）
+    // 交叉核对：计算器口径与隐患内核口径。两条链现在吃**同一组**入参（w 与 β 均取自
+    // 本函数上方），不一致即说明参数换算真的出了问题，须暴露。
+    // v5.5 前水位一个取 waterLevelForCalc、一个取 waterLevel，恒会误报不一致。
     const kernel = Math.round(calc.stabilityDetail(H, angle, w, gamma, phi, c).Fs * 100) / 100;
     const calcFs = fsEv.value !== undefined ? parseFloat(fsEv.value) : NaN;
     if (Number.isFinite(calcFs) && Math.abs(calcFs - kernel) > 0.01) {
@@ -361,7 +365,7 @@ const slopeSpec: DomainSpec = {
   fallback: (ctx, hazards) => {
     const s = ctx.site;
     const H = n(s.landfillHeight) ?? 25, angle = n(s.slopeAngle) ?? 30;
-    const w = n(s.waterLevelForCalc) ?? 10;
+    const w = n(s.waterLevelForCalc) ?? calc.WATER_DEPTH_REPRESENTATIVE;
     const Fs = Math.round(calc.stabilityDetail(H, angle, w, n(s.slopeGamma) ?? 11, n(s.slopePhi) ?? 35, n(s.slopeC) ?? 15).Fs * 100) / 100;
     const crack = hazards.find(h => h.type === '堆体表面裂缝');
     const parts = [`Fs=${Fs}（H=${H}m、坡角 ${angle}°、水位埋深 ${w}m），CJJ 176 运行期要求 ≥1.30，当前${Fs >= 1.3 ? '满足' : '不满足'}。`];

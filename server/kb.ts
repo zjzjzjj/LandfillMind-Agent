@@ -106,13 +106,13 @@ export const KB_ENTRIES: KBEntry[] = [
    easy:'甲烷 5%~15% 体积分数遇火星就炸——这个区间要避免。现场甲烷在线监测点设四处：覆盖层外面（≤5%）、作业面（≤1.25%）、收集井、建筑物内（≤0.5%）。超了立即撤人切火源、开抽气机。',
    cite:'GB 16889-2008 §6.1 / GB 50016-2014',
    clause:'爆炸极限5~15%；现场：覆盖层≤5%、作业面≤1.25%、建筑内≤0.5%；超限即撤人切火。',
-   related:['GB 16889 §6.1','GB 50016 §3 厂房','CJJ 176 §6.1','CJJ/T 273 监测']},
+   related:['GB 16889 §6.1','GB 50016 §3 厂房','CJJ 176 §6.1','GB/T 18772-2017 填埋场环境监测']},
 
   {key:'slopeStable',module:'m6',kw:['堆体','边坡','稳定','安全系数','Fs','圆弧','Bishop'],
    q:'填埋场堆体稳定安全系数怎么算？Fs 不够怎么办？',
    pro:'按 CJJ 176 §4.5 / GB 50330：堆体稳定采用圆弧滑动法（瑞典法或 Bishop 简化法）验算——①正常运行 Fs≥1.30；②地震工况 Fs≥1.15；③封场后长期 Fs≥1.20；④滑裂面须包含堆体-衬垫界面、堆体内部、基底土层三层；⑤加固措施——加筋土工膜（HDPE 与土工格栅联合）、抗滑桩、阶梯式分级堆体（每 5m 一平台宽≥2m）、降低堆体坡比（1:3~1:4 常规）。',
    easy:'堆体稳定看 Fs：正常要≥1.30、地震工况≥1.15、长期≥1.20。算的时候滑裂面要三层都查（堆体内部、堆-衬界面、基底土）。Fs 不够就加筋（HDPE+格栅）、打抗滑桩、阶梯堆体（每 5 米一平台）、放缓坡比。',
-   cite:'CJJ 176-2012 §4.5 / GB 50330-2013 §5.2（已被 CJJ/T 273-2019 部分替代）',calc:'slopeFs',
+   cite:'CJJ 176-2012 §4.5 / GB 50330-2013 §5.2',calc:'slopeFs',
    clause:'Fs：运行≥1.30、地震≥1.15、长期≥1.20；加固：加筋土工膜、抗滑桩、阶梯堆体、放缓坡。',
    related:['GB 50330 边坡','JGJ 120 基坑','CJJ 176 §4.5','HJ 1106']},
 
@@ -122,7 +122,7 @@ export const KB_ENTRIES: KBEntry[] = [
    easy:'垃圾堆一段就要"盖被"——盖 30cm 压实黏土或临时 HDPE 膜，坡度 3% 排水。要继续抽气的话做透气型（留排气孔）；临时停场就做全封闭不透气。单元作业要小（≤5000 m² 一个、≤5m 高），不然滑裂。',
    cite:'CJJ 176-2012 §5.3',
    clause:'中间覆盖≤3d/单元：黏土30cm(k≤10⁻⁵cm/s)或HDPE膜≥1.0mm；透气型留φ75~110排气孔；单元≤5000m²。',
-   related:['CJJ 176 §5.3','GB 16889 §5.3','HJ 1106','CJJ/T 273']},
+   related:['CJJ 176 §5.3','GB 16889 §5.3','HJ 1106','GB/T 18772-2017']},
 
   {key:'stormwater',module:'m6',kw:['雨污分流','清污分流','截洪沟','覆盖层坡度','雨季涌水量'],
    q:'填埋场雨污分流怎么做？',
@@ -825,7 +825,34 @@ for (const e of [...EXPANDED_KB, ...EXPANDED_KB_BATCH2, ...EXPANDED_KB_BATCH3, .
     _added++;
   }
 }
-// 重建 module 索引
+// ====================================================================
+// P3 知识库全域扩充注入（knowledge-base/，2026-09-22 七路并行收集）
+// 新增 7 批 114 条：标准体系15 / 填埋气20 / 渗滤液20 / 注气驱水17 / 治理修复16 / 国际指南14 / 中文书籍政策12
+// 配套文献索引：knowledge-base/08-references/references.json（~700 条真实检索文献/规范/书籍）
+// ====================================================================
+import { EXPANDED_KB_CN_STANDARDS } from '../knowledge-base/06-kb-data/kb-entries-cn-standards';
+import { EXPANDED_KB_LFG } from '../knowledge-base/06-kb-data/kb-entries-lfg';
+import { EXPANDED_KB_LEACHATE } from '../knowledge-base/06-kb-data/kb-entries-leachate';
+import { EXPANDED_KB_GAS_DEWATERING } from '../knowledge-base/06-kb-data/kb-entries-gas-dewatering';
+import { EXPANDED_KB_REMEDIATION } from '../knowledge-base/06-kb-data/kb-entries-remediation';
+import { EXPANDED_KB_INTL } from '../knowledge-base/06-kb-data/kb-entries-intl';
+import { EXPANDED_KB_BOOKS_CN } from '../knowledge-base/06-kb-data/kb-entries-books-cn';
+for (const e of [
+  ...EXPANDED_KB_CN_STANDARDS,
+  ...EXPANDED_KB_LFG,
+  ...EXPANDED_KB_LEACHATE,
+  ...EXPANDED_KB_GAS_DEWATERING,
+  ...EXPANDED_KB_REMEDIATION,
+  ...EXPANDED_KB_INTL,
+  ...EXPANDED_KB_BOOKS_CN,
+]) {
+  if (!_mergedKBKeys.has(e.key)) {
+    KB_ENTRIES.push(e);
+    _mergedKBKeys.add(e.key);
+    _added++;
+  }
+}
+// 重建 module 索引（P3 合并后）
 KB_BY_MODULE.m6 = KB_ENTRIES.filter(e => e.module === 'm6');
 KB_BY_MODULE.m62 = KB_ENTRIES.filter(e => e.module === 'm62');
-console.log(`[KB] 知识库扩充完成：新增 ${_added} 条，总计 ${KB_ENTRIES.length} 条（m6=${KB_BY_MODULE.m6.length}，m62=${KB_BY_MODULE.m62.length}）`);
+console.log(`[KB] P3 全域扩充完成：本批累计新增 ${_added} 条，总计 ${KB_ENTRIES.length} 条（m6=${KB_BY_MODULE.m6.length}，m62=${KB_BY_MODULE.m62.length}）`);

@@ -19,9 +19,9 @@ export const PRESETS: Record<string, Record<PresetName, Record<string, number | 
     aggressive:   { H: 45, beta: 2, gamma: 11, c: 3, phi: 20, waterTableDepth: 5,  seismicCoeff: 0.1,  surcharge: 10 },
   },
   capacity: {
-    conservative: { A: 15, H: 25, rho: 11, Qd: 400, phases: 1, coverRatio: 0.2, sFactor: 0.9 },
-    standard:     { A: 10, H: 30, rho: 10, Qd: 500, phases: 2, coverRatio: 0.1, sFactor: 1 },
-    aggressive:   { A: 8,  H: 40, rho: 9,  Qd: 700, phases: 3, coverRatio: 0.05, sFactor: 1 },
+    conservative: { A: 15, H: 25, rho: 1.2,  Qd: 400, phases: 1, coverRatio: 0.2, sFactor: 0.9 },
+    standard:     { A: 10, H: 30, rho: 1.0,  Qd: 500, phases: 2, coverRatio: 0.1, sFactor: 1 },
+    aggressive:   { A: 8,  H: 40, rho: 0.85, Qd: 700, phases: 3, coverRatio: 0.05, sFactor: 1 },
   },
   settlementHyper: {
     conservative: { t1: 30, s1: 30,  t2: 180, s2: 120 },

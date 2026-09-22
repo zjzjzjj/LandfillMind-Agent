@@ -7,9 +7,10 @@
 - GitHub 账号（当前已登录 zjzjzjj）
 - Render 账号：render.com，直接用 GitHub 登录即可
 - UptimeRobot 账号：uptimerobot.com
-- 两个 API Key 备用（只在 Render 控制台粘贴，绝不写进代码/仓库）：
-  - OpenRouter Key（主通道）
-  - 智谱 GLM Key（备通道）
+- API Key 备用（只在 Render 控制台粘贴，绝不写进代码/仓库）：
+  - 智谱 GLM Key（默认免费通道，必填其一）
+  - DeepSeek 官方 Key（可选直连通道，模型锁定 deepseek-flash）
+  - OpenRouter Key（可选通道）
 
 ## 1. 创建私有 GitHub 仓库并推送（约 2 分钟）
 1. 打开 https://github.com/new
@@ -37,6 +38,7 @@
    |---|---|
    | `OPENROUTER_API_KEY` | 你的 OpenRouter Key |
    | `OPENAI_API_KEY` | 你的智谱 GLM Key |
+   | `DEEPSEEK_API_KEY` | 你的 DeepSeek 官方 Key（可选；不填则 DeepSeek 通道不出现） |
    其余变量（模型名、限流阈值、DB_PATH 等）`render.yaml` 已带默认值，不用动。
 7. 环境变量保存后会自动重新部署；等状态变 Live
 8. 打开 `https://landfillmind.onrender.com`（名字被占用会在控制台显示实际域名）验证：

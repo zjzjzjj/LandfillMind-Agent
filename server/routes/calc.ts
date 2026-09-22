@@ -25,7 +25,7 @@ export const CALC_REGISTRY: Record<string, (params: any) => any> = {
   },
   capacity: (p: any) => {
     const r = calc.capacity(
-      num(p.A, 10), num(p.H, 30), num(p.rho, 10), num(p.Qd, 500),
+      num(p.A, 10), num(p.H, 30), num(p.rho, 1.0), num(p.Qd, 500),
       Math.max(1, num(p.phases, 1)), num(p.coverRatio, 0), num(p.sFactor, 1),
     );
     return { ...r };

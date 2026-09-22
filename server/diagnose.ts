@@ -1,4 +1,4 @@
-import { enqueueLLM, detailMaxTokens, detailPromptSuffix, allProviders } from './llm.js';
+import { enqueueLLM, detailMaxTokens, detailPromptSuffix, allProviders, thinkingOff } from './llm.js';
 import { readableFormula } from './formula.js';
 import type { DetailLevel, CompatCfg } from './llm.js';
 import * as calc from './calculate.js';
@@ -276,8 +276,17 @@ export function evaluateHazards(site: SiteData): Hazard[] {
   {
     const H = site.landfillHeight, beta = site.slopeAngle, gamma = site.slopeGamma,
       c = site.slopeC, phi = site.slopePhi, w = site.waterLevel;
-    // 稳定计算用的水位：优先取显式给定的代表水位（可为估算值），否则回退实测水位
-    const wCalc = site.waterLevelForCalc ?? w;
+    // 稳定计算用的水位：优先取显式给定的代表水位（已是「自堆顶起算」口径）；
+    // 回退到监测值 waterLevel 时必须换算——它的参考面是库底（v5.5 修：此前直传，
+    // 把「库底以下 2.5m」当成「堆顶以下 2.5m」，堆体按 92% 浸没计浮托，Fs 严重偏低）
+    const wConverted = typeof w === 'number' && typeof H === 'number' ? calc.waterDepthFromTop(H, w) : w;
+    // 缺测时与领域 Agent 用同一代表工况值：此前此处按 0 m（全浸没）代入，
+    // 同一场地在快诊里判「失稳红」、在深做里按 10 m 判另一档，两模块结论互相打脸
+    const wCalc = site.waterLevelForCalc ?? wConverted ?? calc.WATER_DEPTH_REPRESENTATIVE;
+    const waterNote = site.waterLevelForCalc !== undefined ? ''
+      : typeof w !== 'number'
+        ? `（水位未实测，稳定计算按代表工况埋深 ${calc.WATER_DEPTH_REPRESENTATIVE} m 代入，不参与水位监测隐患判定）`
+        : `（由监测水位换算：水位在库底${w >= 0 ? `以下 ${w}m → 堆体不受地下水浮托` : `高出库底 ${(-w).toFixed(1)}m`}）`;
     let Fs: number | undefined;
     let riskLevel: Severity | undefined;
     let calcSteps: CalcStep[] | undefined;
@@ -289,13 +298,13 @@ export function evaluateHazards(site: SiteData): Hazard[] {
       const driving = gamma * H * Math.sin(alpha) * Math.cos(alpha);
       const resisting = c + gamma * H * Math.cos(alpha) * Math.cos(alpha) * tanPhi;
       calcSteps = [
-        { label: '整理计算参数', formula: 'H、β、γ、c、φ、水位埋深', detail: `H=${H}m，β=${beta}°，γ=${gamma}kN/m³，c=${c}kPa，φ=${phi}°，水位埋深≈${wCalc ?? 0}m${w === undefined && wCalc !== undefined ? '（估算代表水位，非实测）' : ''}` },
+        { label: '整理计算参数', formula: 'H、β、γ、c、φ、水位埋深（自堆顶起算）', detail: `H=${H}m，β=${beta}°，γ=${gamma}kN/m³，c=${c}kPa，φ=${phi}°，稳定计算水位埋深≈${wCalc ?? 0}m${waterNote}` },
         { label: '简化条分法抗滑稳定', formula: 'Fs = (c + γ·H·cos²β·tanφ) / (γ·H·sinβ·cosβ)', detail: `滑动力 = γ·H·sinβ·cosβ = ${driving.toFixed(1)} kPa；抗滑力 = c + γ·H·cos²β·tanφ = ${resisting.toFixed(1)} kPa` },
-        { label: '稳定系数与等级判定', formula: '运行期要求 Fs ≥ 1.30', detail: `Fs = ${Fs.toFixed(2)}${Fs >= 1.3 ? '，满足运行要求' : '，不满足运行要求'} → ${severityLabel(riskLevel)}` },
+        { label: '稳定系数与等级判定', formula: '运行期要求 Fs ≥ 1.30', detail: `Fs = ${Fs.toFixed(2)}${Fs >= calc.FS_REQUIRED ? '，满足运行要求' : '，不满足运行要求'} → ${severityLabel(riskLevel)}` },
       ];
     } else if (typeof site.stabilityFactor === 'number') {
       Fs = site.stabilityFactor;
-      riskLevel = Fs < 1.0 ? 'red' : Fs < 1.2 ? 'orange' : Fs < 1.5 ? 'yellow' : 'blue';
+      riskLevel = calc.gradeFromFs(Fs);
       calcSteps = [
         { label: '采用输入稳定系数', formula: 'Fs（现场/委托测算）', detail: `Fs = ${Fs}` },
         { label: '等级判定', formula: '运行期要求 Fs ≥ 1.30', detail: `Fs = ${Fs} → ${severityLabel(riskLevel)}` },
@@ -610,7 +619,7 @@ export async function callDeepSeekAdvice(
     conclusion: readableFormula(String(p.conclusion ?? '')),
   });
 
-  // 双通道链：主通道（OpenRouter）→ 备通道（GLM 直连），任一通道可用即出报告
+  // 通道链：按 allProviders() 顺序（OpenRouter → GLM 直连 → DeepSeek 直连），任一通道可用即出报告
   const chain: { cfg: CompatCfg; model: string }[] = [];
   allProviders().forEach(cfg => {
     cfg.models.forEach(model => {
@@ -672,7 +681,7 @@ export async function callDeepSeekAdvice(
       ],
       temperature: 0.3,
       max_tokens: maxTokens,
-      ...(item.cfg.kind === 'glm' ? { thinking: { type: 'disabled' } } : {}),   // 禁用推理思考，避免 reasoning_content 占满 token 截断 JSON
+      ...thinkingOff(item.cfg),   // GLM/DeepSeek 直连：禁用推理思考，避免 reasoning_content 占满 token 截断 JSON
       ...(withJsonMode && item.cfg.kind !== 'glm' ? { response_format: { type: 'json_object' } } : {}),
     });
     for (let attempt = 0; attempt < 3; attempt++) {

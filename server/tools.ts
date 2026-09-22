@@ -381,6 +381,20 @@ export function normalizeL3dSpec(spec: unknown): Record<string, unknown> {
         }
         return null;
       }).filter((x: unknown) => Array.isArray(x) && x.length >= 2);
+      // ⚠ 此前重建 ee 时只留了 name/poly/top_z/levels —— temp_n / order /
+      // slopes 被静默丢掉：界面上设的"临时坡、开挖顺序、逐边坡比"从来没到过
+      // 内核。逐字段保留并消毒（RowsEditor 的 num 格是字符串，'' 必须消失）
+      const tnn = grabNum(e?.temp_n);
+      if (tnn !== undefined && tnn > 0) ee.temp_n = tnn;
+      const ord = grabNum(e?.order);
+      if (ord !== undefined) ee.order = Math.round(ord);
+      if (Array.isArray(e?.slopes)) {
+        const sl = (e.slopes as unknown[])
+          .map((x) => grabNum(x)).filter((x) => x !== undefined && x > 0);
+        if (sl.length) ee.slopes = sl;
+      }
+      if (e?.cut_to_base === true || e?.cut_to_base === 'true'
+          || e?.cut_to_base === 1 || e?.cut_to_base === '1') ee.cut_to_base = true;
       return ee;
     }).filter((e: any) => Array.isArray(e.poly) && e.poly.length >= 3);
     // ⚠ 这里**不能**再要求 `Number.isFinite(e.top_z)` —— 那会把 top_z 为空的
@@ -389,6 +403,44 @@ export function normalizeL3dSpec(spec: unknown): Record<string, unknown> {
     if (!(out.excavation as unknown[]).length) delete out.excavation;
   }
   return out;
+}
+
+/** params 层的 zones/stage 消毒（phased / excavation / export 共用）。
+ *  与 normalizeL3dSpec 的开挖块同一手法：RowsEditor 的清空格是 ''，必须让键
+ *  消失而不是把 '' 送进内核；数值一律过 grabNum；cut_to_base 收成布尔。 */
+export function normalizeL3dZonesParam(params: Record<string, unknown>): void {
+  if (Array.isArray(params.zones)) {
+    params.zones = (params.zones as any[]).map((z, i) => {
+      const o: Record<string, unknown> = { name: String(z?.name ?? `分区${i + 1}`) };
+      const poly = z?.poly ?? z?.polygon;
+      if (Array.isArray(poly)) o.poly = poly;
+      const tz = grabNum(z?.top_z);
+      if (tz !== undefined) o.top_z = tz;                       // ''/null → 不发
+      const tn = grabNum(z?.temp_n);
+      if (tn !== undefined && tn > 0) o.temp_n = tn;
+      const ord = grabNum(z?.order);
+      if (ord !== undefined) o.order = Math.round(ord);
+      if (Array.isArray(z?.levels)) o.levels = z.levels;         // 内核自己校验三元组
+      if (Array.isArray(z?.slopes)) {
+        const sl = (z.slopes as unknown[])
+          .map((x) => grabNum(x)).filter((x) => x !== undefined && x > 0);
+        if (sl.length) o.slopes = sl;
+      }
+      if (z?.cut_to_base === true || z?.cut_to_base === 'true'
+          || z?.cut_to_base === 1 || z?.cut_to_base === '1') o.cut_to_base = true;
+      return o;
+    }).filter((o) => Array.isArray(o.poly) && (o.poly as unknown[]).length >= 3);
+  }
+  const st = params.stage;
+  if (st !== undefined) {
+    const n = grabNum(st);
+    if (n === undefined) delete params.stage;                    // ''/'most'/null → 内核默认
+    else params.stage = Math.round(n);
+  }
+  const db = params.depth_below;
+  if (db === '' || db === null) delete params.depth_below;
+  const wl = params.water_level;
+  if (wl === '' || wl === null) delete params.water_level;
 }
 
 /**
@@ -409,6 +461,10 @@ async function execKernel3dAction(
 
   let mergedSpec: Record<string, unknown> | undefined;
   let effectiveParams: Record<string, unknown> = { ...(raw.params as Record<string, unknown> ?? {}) };
+  // phased/excavation/export 的 zones 参数同样要消毒 —— 此前只有 model 路径的
+  // spec 走 normalizeL3dSpec，聊天/红队路径能把 `top_z:""` 原样送进内核,
+  // Python float('') 直接炸掉整个 action（前端表现为"未知错误"）
+  normalizeL3dZonesParam(effectiveParams);
 
   if (action === 'model') {
     const patch = normalizeL3dSpec(raw.spec);

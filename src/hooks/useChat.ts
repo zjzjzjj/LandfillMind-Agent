@@ -81,6 +81,13 @@ export function useChat(opts: UseChatOptions) {
     const assistantMsgId = uuidv4();
     let assistantContent = '';
     let assistantRaw = '';
+    /**
+     * 流内提示（错误/停止）单独累积。此前直接往 assistantContent 上追加，
+     * 而每个 text 事件都会用 cleanAssistantText(assistantRaw) 重算正文，
+     * 于是 mid-stream 的 [错误] 会被下一条 text 抹掉、最终也不落库。
+     */
+    let assistantNotice = '';
+    const setContent = () => { assistantContent = cleanAssistantText(assistantRaw) + assistantNotice; };
     let assistantSources: MessageSources | null = null;
     const toolCallsMap = new Map<string, ToolCall>();
 
@@ -137,7 +144,7 @@ export function useChat(opts: UseChatOptions) {
             const event = JSON.parse(data);
             if (event.type === 'text') {
               assistantRaw += event.text ?? '';
-              assistantContent = cleanAssistantText(assistantRaw);
+              setContent();
               const cur = liveMessagesRef.current;
               liveMessagesRef.current = [
                 ...cur.slice(0, -1),
@@ -188,7 +195,8 @@ export function useChat(opts: UseChatOptions) {
             } else if (event.type === 'permission') {
               setPermissionRequest({ tool: event.tool, params: event.params, sessionId: sid });
             } else if (event.type === 'error') {
-              assistantContent += `\n[错误] ${event.message}`;
+              assistantNotice += `\n[错误] ${event.message}`;
+              setContent();
             } else if (event.type === 'follow_up') {
               // P0-8 修复：追问引导事件（server/followUp.ts 命中关键词后下发）
               //   不参与流式正文，仅作为独立卡片提示：建议用户补全哪些参数以解锁计算
@@ -207,20 +215,22 @@ export function useChat(opts: UseChatOptions) {
         }
       }
     } catch (err: unknown) {
-      if ((err as Error)?.name === 'AbortError') {
-        assistantContent += '\n[已停止]';
-      } else {
-        assistantContent += `\n[网络错误] ${(err as Error)?.message ?? '未知错误'}`;
-      }
+      assistantNotice += (err as Error)?.name === 'AbortError'
+        ? '\n[已停止]'
+        : `\n[网络错误] ${(err as Error)?.message ?? '未知错误'}`;
+      setContent();
     } finally {
       streamingRef.current = false;
       setIsLoading(false);
       stopController.current = null;
 
-      // 把最后一条助手消息定稿（content/toolCalls/sources 全部更新）
+      // 把最后一条助手消息定稿（content/toolCalls/sources/followUps 全部保留）
+      // v5.5 修：followUps 此前没被带进 finalMsg，追问卡片在流结束的瞬间就消失
+      const streaming = liveMessagesRef.current[liveMessagesRef.current.length - 1];
       const finalMsg: Message = {
         id: assistantMsgId, role: 'assistant', content: assistantContent,
         timestamp: Date.now(), toolCalls: Array.from(toolCallsMap.values()), sources: assistantSources,
+        followUps: streaming?.id === assistantMsgId ? streaming.followUps : undefined,
       };
       const cur = liveMessagesRef.current;
       liveMessagesRef.current = [...cur.slice(0, -1), finalMsg];

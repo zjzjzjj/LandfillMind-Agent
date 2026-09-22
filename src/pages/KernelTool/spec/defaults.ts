@@ -50,6 +50,9 @@ export interface ZoneRow {
   /** 逐边临时坡比（画布上点边中点设，长度 = 顶点数；null = 用 tempN）。
       内核 excavation.normalize_zone 要求「个数 == 顶点数且均为有限正数」。 */
   slopes?: Array<number | null>;
+  /** 挖到基底：坡面仍按分级剖面成型，但坑底直接削到基底 Zb，不受 Σ坡高封顶。
+      内核 apply_excavation_model 的 cut_to_base 键（v1.7.2 起）。 */
+  cutToBase?: boolean;
 }
 
 const DEMO_LAYERS: LayRow[] = [
@@ -278,10 +281,13 @@ export interface UiState {
   viewToken: { kind: 'bird' | 'top' | 'front'; token: number; dAzim?: number } | null;
   /** 污染结果时刻下拉当前值（羽流快照日 / 产气强度年；下拉按它显示选中项） */
   pollTime: number | null;
-  /** 开挖分区画布用的场地轮廓（由 zones 动作回带的 outline 缓存） */
-  excOutline: number[][] | null;
+  /** 开挖分区画布用的场地轮廓（zones 动作回带；多单元场地是**多块**轮廓） */
+  excOutline: number[][] | number[][][] | null;
   /** 开挖分区画布模式（桌面 ✂ 切割中 ⇄ ⌣ 设坡比中） */
   excMode: 'cut' | 'slope';
+  /** 逐阶段 3D 查看的阶段索引（null = 三维显示"应用开挖"后的模型；
+      P3：分阶段分析会把各阶段 OBJ 带进 files，下拉切换只改这里） */
+  stage3d: number | null;
 }
 
 export function defaultUi(): UiState {
@@ -299,5 +305,6 @@ export function defaultUi(): UiState {
     pollTime: null,
     excOutline: null,
     excMode: 'cut',
+    stage3d: null,
   };
 }

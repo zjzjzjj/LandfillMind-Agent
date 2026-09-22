@@ -63,6 +63,58 @@ export function stabilityDetail(
   };
 }
 
+/** 水位缺测时稳定计算的代表埋深（m，自堆顶起算）—— 快诊/领域/敏感性共用同一值 */
+export const WATER_DEPTH_REPRESENTATIVE = 10;
+
+/**
+ * 监测口径 → 稳定计算口径的水位换算（唯一转换点，v5.5）。
+ *
+ * 两个"水位埋深"是相反的参考面，直传会错一个数量级：
+ *  - SiteData.waterLevel：**地下水位在库底面以下**的埋深（m，越小越危险，监测值）；
+ *  - stabilityDetail 的入参：**水位自堆顶起算**的埋深（m，=H 表示堆体完全在水位以上）。
+ * 把「水位在库底以下 2.5 m」当成「自堆顶起算 2.5 m」，内核会按 92% 浸没计浮托力，
+ * Fs 被严重低估（H=30、1:3 工况实测可从 0.52 抬回 1.45）。
+ *
+ * 约定：baseDepth ≥ 0 表示水位仍在库底以下（堆体不受地下水浮托 → 取 H）；
+ *       baseDepth < 0 表示水位已涌入库内 |baseDepth| 米（浸没高度 = |baseDepth|）。
+ */
+export function waterDepthFromTop(H: number, baseDepth: number): number {
+  const submerged = Math.max(0, -baseDepth);
+  return Math.max(0, Math.min(H, H - submerged));
+}
+
+/**
+ * Fs 分档 —— 唯一口径（v5.5）
+ *
+ * 原先四处各自判档且互不一致：slopeFs 黄档止于 1.3 并把 ≥1.3 记为 green、
+ * calculateStabilityFactor 黄档止于 1.5 记为 blue、augment.runCalc 用
+ * `Fs>=1.3 ? green : red` 二值判定、diagnose 对直接给定的 Fs 另写一条链。
+ * 结果 1.3~1.5 区间同一工况会得出「满足/绿色」与「基本稳定/黄色」两个结论。
+ * 现全部收敛到此函数；规范判据本身另由 FS_REQUIRED 表达，不参与分档。
+ */
+export const FS_REQUIRED = 1.3;  // CJJ 176-2012 §4.5 运行期要求
+export const FS_GOOD = 1.5;      // 良好裕度（低于此值虽满足规范仍需关注）
+
+export type FsGrade = 'red' | 'orange' | 'yellow' | 'blue';
+
+export function gradeFromFs(Fs: number): FsGrade {
+  if (!Number.isFinite(Fs) || Fs < 1.0) return 'red';
+  if (Fs < 1.2) return 'orange';
+  if (Fs < FS_GOOD) return 'yellow';
+  return 'blue';
+}
+
+/** 分档对应的工程定性词，供各条计算链共用同一措辞 */
+export function fsBandLabel(Fs: number): '失稳' | '欠稳定' | '基本稳定' | '稳定' {
+  const g = gradeFromFs(Fs);
+  return g === 'red' ? '失稳' : g === 'orange' ? '欠稳定' : g === 'yellow' ? '基本稳定' : '稳定';
+}
+
+/** 「满足运行要求但未达良好裕度」这类中间态的判据补充说明 */
+export function fsComplianceNote(Fs: number): string {
+  return Fs < FS_REQUIRED ? ' ⚠ 低于规范' : Fs < FS_GOOD ? ' ✓ 满足运行要求（未达 1.50 良好裕度）' : ' ✓ 满足';
+}
+
 /**
  * 稳定安全系数（简化瑞典条分法，无限长坡假设）—— 由 slopeFs 的 CALC_REGISTRY 适配调用。
  * 委托 stabilityDetail，返回形状与历史版本保持一致。
@@ -70,17 +122,13 @@ export function stabilityDetail(
 export function calculateStabilityFactor(
   height: number, slopeAngle: number, waterLevelDepth: number,
   gamma = GAMMA_WASTE, phi = PHI_WASTE, c = C_WASTE,
-): { Fs: number; riskLevel: 'red' | 'orange' | 'yellow' | 'blue'; analysis: string } {
+): { Fs: number; riskLevel: FsGrade; analysis: string } {
   const Fs = stabilityDetail(height, slopeAngle, waterLevelDepth, gamma, phi, c).Fs;
-  let riskLevel: 'red' | 'orange' | 'yellow' | 'blue';
-  if (Fs < 1.0) riskLevel = 'red';
-  else if (Fs < 1.2) riskLevel = 'orange';
-  else if (Fs < 1.5) riskLevel = 'yellow';
-  else riskLevel = 'blue';
-  const analysis = Fs < 1.0 ? `失稳 Fs=${Fs.toFixed(2)}` :
-    Fs < 1.2 ? `欠稳定 Fs=${Fs.toFixed(2)}` :
-    Fs < 1.5 ? `基本稳定 Fs=${Fs.toFixed(2)}` : `稳定 Fs=${Fs.toFixed(2)}`;
-  return { Fs: Math.round(Fs * 100) / 100, riskLevel, analysis };
+  return {
+    Fs: Math.round(Fs * 100) / 100,
+    riskLevel: gradeFromFs(Fs),
+    analysis: `${fsBandLabel(Fs)} Fs=${Fs.toFixed(2)}`,
+  };
 }
 
 /** 有效影响半径（内部辅助） */
@@ -132,13 +180,13 @@ export function slopeFs(
   const Fs = d.Fs;
   // 仅地震工况 Fs（无超载）
   const FsSeismic = seismicCoeff > 0 ? d.totalResisting / (d.drivingGravity + d.drivingSeismic) : 0;
-  const grade = Fs < 1.0 ? 'red' : Fs < 1.2 ? 'orange' : Fs < 1.3 ? 'yellow' : 'green';
+  const grade = gradeFromFs(Fs);
   return {
     ok: true,
     value: Math.round(Fs * 100) / 100,
     unit: '无量纲',
     grade,
-    analysis: `H=${H}m，坡比 1:${beta}（坡角 ${alphaDeg.toFixed(1)}°），γ=${gamma}kN/m³，c=${c}kPa，φ=${phi}°，水位埋深=${waterTableDepth}m，kv=${seismicCoeff}，q=${surcharge}kPa。Fs = ${Fs.toFixed(2)}（运行要求 ≥1.30，CJJ 176-2012 §4.5）${Fs < 1.3 ? ' ⚠ 低于规范' : ' ✓ 满足'}。`,
+    analysis: `H=${H}m，坡比 1:${beta}（坡角 ${alphaDeg.toFixed(1)}°），γ=${gamma}kN/m³，c=${c}kPa，φ=${phi}°，水位埋深=${waterTableDepth}m，kv=${seismicCoeff}，q=${surcharge}kPa。Fs = ${Fs.toFixed(2)}（${fsBandLabel(Fs)}；运行要求 ≥1.30，良好 ≥1.50，CJJ 176-2012 §4.5）${fsComplianceNote(Fs)}。`,
     ref: 'CJJ 176-2012 §4.5 / GB 50330-2013',
     formula: 'Fs = (c + γ′·H·cos²α·tanφ) / (γ·H·sinα·cosα + kv·W + q·H)',
     extra: {

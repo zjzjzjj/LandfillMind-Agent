@@ -68,10 +68,14 @@ export default function ExcavationPanel() {
             { key: 'topZ', label: '顶标高', w: 60, type: 'num' },
             { key: 'tempN', label: '临时坡', w: 56, type: 'num' },
             { key: 'levels', label: '分级', w: 76 },
+            { key: 'cutToBase', label: '挖到基底', w: 52, type: 'chk',
+              },
           ]}
           blank={() => ({ order: ((zones?.length as number) || 0) + 1, name: '新分区',
-                          poly: '', topZ: null, tempN: Number(tempN) || 2, levels: levelsText })} />
-        <Hint>当前 {zones?.length || 0} 个分区。改完分区表后点「▶ 应用开挖」才会写进模型。</Hint>
+                          poly: '', topZ: null, tempN: Number(tempN) || 2,
+                          levels: levelsText, cutToBase: false })} />
+        <Hint>当前 {zones?.length || 0} 个分区。改完分区表后点「▶ 应用开挖」才会写进模型。
+          勾「挖到基底」的分区: 坡面仍按分级剖面成型, 坑底直接削到基底标高。</Hint>
       </Grp>
 
       {/* ② 分级开挖坡 */}
@@ -152,13 +156,21 @@ export default function ExcavationPanel() {
           Fs 才可比。
         </Hint>
         <Row label="查看阶段" labelW={126}>
-          <Sel path="exc.stage" width={190}
-               options={[
-                 ['most', '最不利（阶段 k）'],
-                 ...Array.from({ length: (k.pool.excavation?.stageCount || 0) + 1 },
-                   (_, i) => [String(i), i === 0 ? '阶段 0：开挖前'
-                     : `阶段 ${i}：已挖前 ${i} 个分区`] as [string, string]),
-               ]} />
+          {/* 阶段 0..K 共 stageCount 项（含"开挖前"）—— 旧版枚举 0..stageCount
+              会多出一档越界项；工件齐时切换只换 3D+剖面图，不重跑内核 */}
+          <select className="lf-input" style={{ width: 190 }}
+                  value={stage || 'most'}
+                  onChange={(e) => {
+                    form.set('exc.stage', e.target.value);
+                    void a.onStagePick(e.target.value);
+                  }}>
+            <option value="most">最不利（阶段 k）</option>
+            {Array.from({ length: (k.pool.excavation?.stageCount || 0) },
+              (_, i) => (
+                <option key={i} value={String(i)}>
+                  {i === 0 ? '阶段 0：开挖前' : `阶段 ${i}：已挖前 ${i} 个分区`}
+                </option>))}
+          </select>
         </Row>
         <Btn kind="accent" width="100%" onClick={async () => {
           const r = await a.doPhased(stage);
