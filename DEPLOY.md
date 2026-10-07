@@ -66,10 +66,17 @@
 - OpenRouter 后台设置消费上限（建议 5-10 美元/月），防止公网 Key 被刷
 - 演示/交付结束后：删除 Render 服务 + 轮换两个 Key（Key 曾出现在聊天记录中）
 - 免费层无持久磁盘：重启/重新部署后历史会话清空，属预期行为
-- **权威内核 `run_3d_kernel` 仅限同机部署**：该工具 spawn 本机 Python 的 Landfill 3D Tool
-  （`KERNEL3D_REPO_PATH/agent_bridge.py`）读写会话工程与分析产物。云端（Render/Docker）镜像内
-  没有该仓库与 Python 环境，工具会返回"未配置三维内核"错误信封（不影响其它 8 个工具与对话功能）；
-  若要在公网环境提供内核能力，需另建常驻 HTTP 微服务包住 agent_bridge.py 并改走网络调用（v5.2 未做）。
+- **三维内核（`run_3d_kernel` / `/tool` 页）已内置**：内核代码随仓库走（`kernel3d/agent_bridge.py`
+  + `kernel3d/landfill3d/`），本地开发零配置；Docker 镜像内已带 Python 环境
+  （`/opt/venv` + numpy/scipy/matplotlib + Noto CJK 字体，见 Dockerfile），云端同样能出图。
+  三条注意：
+  ① 图件中文靠镜像里的 `fonts-noto-cjk` —— `landfill3d/style.py` 的字体候选含
+     `Noto Sans CJK SC`，换基础镜像时别把它省掉，否则图照样生成、汉字全变方框。
+  ② 稳定性扫描 / 羽流是 CPU 密集动作（本地预算 60~240s，见 `KERNEL3D_TIMEOUT_MS`），
+     Render 免费层 0.1 CPU / 512MB 很可能超时或被 OOM kill。公网演示建议只做建模、
+     库容、剖面这类轻动作，重扫描留在本地机。
+  ③ 会话工程与分析产物落 `data/kernel3d/sessions/<sid>/`，免费层无持久磁盘，重启即失，
+     `/tool` 页需重新建模一次（内核本身不受影响）。
 
 ## 6. 常见问题
 | 现象 | 处理 |
@@ -79,6 +86,7 @@
 | 对话报 429 | 环境变量 RATE_LIMIT_* 过严，或 Key 额度/余额不足 |
 | 首页打不开但 /api/health 正常 | Ctrl+F5 强刷；静态资源刚发布有缓存 |
 | 实例睡了访问慢 | 等 1 分钟冷启动；检查 UptimeRobot 监控是否停用 |
+| `/tool` 报「未找到三维内核」 | 内置副本缺失：`git checkout -- kernel3d`；或解释器不对：`KERNEL3D_PY` 指到带 numpy/scipy/matplotlib 的 python。容器内应已是 `/opt/venv/bin/python`，`GET /api/kernel3d/health` 可看 `configured/repo/python` |
 
 ---
 

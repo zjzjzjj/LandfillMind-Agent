@@ -17,3 +17,6 @@ playwright/.cache
 vite.config.js
 vite.config.d.ts
 node_modules/.vite
+__pycache__
+**/__pycache__
+*.pyc

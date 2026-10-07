@@ -1,5 +1,46 @@
 # Changelog · LandfillMind 填埋场全周期智能体
 
+## v5.5.1（2026-10-07 · 三维内核内置进仓库：不再依赖同机的另一个目录）
+
+`landfill3d`（v1.7.2-rb）此前活在仓库外：`server/kernel3d.ts` 里硬编码一个 `E:\ZJU\ZJU\三维建模\...`
+默认路径，靠 `.env` 的 `KERNEL3D_REPO_PATH` 指到同机另一份目录。三个后果：clone 下来不带内核就
+是"未配置三维内核"；内核自身**没有任何版本控制**（改了没法回滚、没法比对）；DEPLOY.md 因此写明
+内核"仅限同机部署"，云端 `/tool` 是空壳。本轮把内核收进仓库，并把镜像做成真能跑内核。
+
+- **入库**：`kernel3d/agent_bridge.py` + `kernel3d/landfill3d/`（11 个 py，224KB / 4452 行）逐文件
+  sha256 与源副本一致后提交；`kernel3d/requirements.txt` 记依赖（numpy/scipy/matplotlib + 可选
+  openpyxl/python-docx，本机基线 Python 3.12.10）。`.gitignore` 补 `__pycache__/`、`*.pyc`，
+  `.dockerignore` 同步。桌面 GUI（`app.py`）与 `test_agent_bridge.py` 本来就不在这份快照里，
+  Web 端 `/tool` 已取代桌面界面 —— 内置的是 headless 内核，不是整个桌面工具。
+- **路径解析**（`server/kernel3d.ts:33-46`）：`REPO` 默认改为 `import.meta.url` 相对解析到
+  `../kernel3d`（顺带让 `RUNS_ROOT` 复用同一个 `HERE`）；`PY` 默认按平台取（win32=`py`，
+  类 Unix=`python3`）。`KERNEL3D_REPO_PATH` 降级为"去调另一份内核副本"的调试开关，并且**故意**
+  不做"指错了就静默退回内置"的兜底 —— 否则"改了内核却没生效"这类事会以更难查的形式再发生一次，
+  现在得到的是 `configured:false` + 带内置路径的 hint。`kernel3d.ts` 两处"请更新 Landfill 3D Tool"
+  与 `KernelToolPage` 的失败提示同步改成内置语义。
+- **Docker**：production 阶段 `node:22-alpine` → `node:22-bookworm-slim`。musl 上
+  numpy/scipy/matplotlib 没有可靠 wheel，装不上时表现是内核 `ModuleNotFound`，很难查，glibc 才稳。
+  镜像里 `python3 -m venv /opt/venv` 装 `kernel3d/requirements.txt`（绕开 Debian 的
+  externally-managed 限制），并装 `fonts-noto-cjk` —— `style.py` 的字体候选含
+  `Noto Sans CJK SC`，缺字体时图照样生成、汉字全变方框，属于"看起来成功"的坏失败。
+  `ENV KERNEL3D_PY=/opt/venv/bin/python`、`MPLCONFIGDIR=/tmp/matplotlib`（字体缓存要可写）；
+  healthcheck 从 `wget` 改 Node 自带 `fetch`（slim 无 wget），非 root 用户改 `groupadd/useradd`。
+  ⚠ **镜像未实机验证**（本机无 docker），构建期风险集中在 pip wheel 与 apt 源。
+- **文档**：DEPLOY.md §5 的"仅限同机部署"作废，改写为内置 + 三条注意（CJK 字体、免费层 0.1 CPU
+  跑不动重扫描、`data/kernel3d/sessions/` 无持久磁盘重启即失），§6 加一行"未找到三维内核"排查；
+  README 的能力表/架构图/技术栈/快速开始四处同步；render.yaml 注明镜像已自带内核环境、无需配
+  `KERNEL3D_*`。
+- **验收**（本机，指向内置副本）：`tsc -b` 0 错；`/api/kernel3d/health` `configured:true`
+  且 `repo` 落在仓库内 `kernel3d`；`info` 回 v1.7.2-rb / 14 actions / 23 figures；真实跑建模 +
+  稳定性（Fs_min 1.925 → blue，`critical_arc` PNG HTTP 200 / 60KB，`key_numbers` 出数）；
+  `smoke:tools` 全过；`k3d-check` 3/3（stdin 桥与口径守卫都走内置副本）；`landfill3d.audit`
+  前三项 True（库容误差 1.94%、加密后 Fs 收敛差 0.012、Cc 法 90.39cm > Es 法 35.56cm）；
+  `/tool` 品牌条显示 v1.7.2-rb（版本取自内核自述，不是前端硬编码）。
+- **遗留**（下轮收，本轮不动）：`server/tools.ts` 给 LLM 看的工具说明仍写"v1.7.0"，与内核实装
+  1.7.2-rb 漂移；内核侧的开挖记录累加、`cli.py` 库容矩形积分与 physics 的辛普森口径分裂等
+  仍待处理。
+
+
 ## v5.5（2026-09-22 · 数值口径统一：同一工况不再出两个结论）
 
 四类「同一输入、不同模块不同答案」的口径分裂逐项收口，全部落在确定性内核层，不改任何 LLM 提示词。

@@ -1,5 +1,9 @@
 /**
- * kernel3d.ts — LandfillMind 到 Landfill 3D Tool（Python 权威内核）的桥。
+ * kernel3d.ts — LandfillMind 到三维内核 landfill3d（Python，v1.7.2-rb）的桥。
+ *
+ * 内核随仓库内置在 `kernel3d/`（agent_bridge.py + landfill3d 包），默认无需配置；
+ * KERNEL3D_REPO_PATH 只在你想让应用去调另一份内核副本时才设（例如内核还在独立
+ * 仓库里开发、想先验证再合入）。依赖见 kernel3d/requirements.txt。
  *
  * 两条通道：
  *   1) 旧 stdin 桥 runKernel3d(cfg)：spawn `py -m landfill3d.cli`，配置 JSON 走
@@ -30,9 +34,17 @@ export interface Kernel3dResult {
   elapsedMs: number;
 }
 
-const REPO = process.env.KERNEL3D_REPO_PATH
-  || 'E:\\ZJU\\ZJU\\三维建模\\Landfill 3D Tool';
-const PY = process.env.KERNEL3D_PY || 'py';
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+
+/**
+ * 内核仓库根：默认用仓库内置的 `kernel3d/`（与 server/ 同级，随 git 一起走）。
+ * KERNEL3D_REPO_PATH 只在你想让应用去调**另一份**内核副本时才设（对照实验、
+ * 桌面工具新版本先行验证）；指到一个不存在的路径会得到 configured:false + hint，
+ * 不会静默退回内置副本 —— 免得"改了内核没生效"这类事再发生一次。
+ */
+const REPO = process.env.KERNEL3D_REPO_PATH || path.resolve(HERE, '..', 'kernel3d');
+/** 解释器：Windows 用 py 启动器，类 Unix（Docker / Render）用 python3；KERNEL3D_PY 覆盖 */
+const PY = process.env.KERNEL3D_PY || (process.platform === 'win32' ? 'py' : 'python3');
 
 /**
  * 内核子进程环境。
@@ -118,8 +130,7 @@ export function runKernel3d(
  * /api/kernel3d/file 白名单路由供给卡片。
  */
 
-const RUNS_ROOT = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)), '..', 'data', 'kernel3d');
+const RUNS_ROOT = path.resolve(HERE, '..', 'data', 'kernel3d');
 
 export interface Kernel3dFigure {
   key: string;
@@ -322,7 +333,7 @@ export async function ensureKernelMesh(sid?: string): Promise<
     }
   }
   if (!fs.existsSync(objPath)) {
-    return { ok: false, error: '网格文件缺失（内核版本过旧？请更新 Landfill 3D Tool 后重试）' };
+    return { ok: false, error: '网格文件缺失（内置内核没产出 model.obj —— kernel3d/ 副本被改动，还是会话产物已过期？）' };
   }
   return { ok: true, sid: target, objPath, info: getKernelMeshInfo(target), refreshed };
 }
@@ -364,7 +375,7 @@ export async function ensureKernelMeshViewport(
     }
   }
   if (!fs.existsSync(objPath)) {
-    return { ok: false, error: '网格文件缺失（内核版本过旧？请更新 Landfill 3D Tool 后重试）' };
+    return { ok: false, error: '网格文件缺失（内置内核没产出 model.obj —— kernel3d/ 副本被改动，还是会话产物已过期？）' };
   }
   return { ok: true, sid: target, objPath, info: getKernelMeshInfo(target), refreshed };
 }
@@ -409,7 +420,9 @@ export function kernel3dStatus() {
     repo: REPO,
     python: PY,
     bridge: b ? b.bridge : path.join(REPO, 'agent_bridge.py'),
-    hint: '未找到三维内核：请在 .env 设置 KERNEL3D_REPO_PATH 指向 "Landfill 3D Tool" 仓库根目录（含 agent_bridge.py），并确认可用 py 启动器（或 KERNEL3D_PY 指向 python.exe）',
+    hint: `未找到三维内核（内置副本应在 ${path.resolve(HERE, '..', 'kernel3d')}）。`
+      + '内置副本缺失时先 `git checkout -- kernel3d`；确要指向别的副本再设 KERNEL3D_REPO_PATH。'
+      + `当前解释器 ${PY}（Windows 默认 py，类 Unix 默认 python3，可用 KERNEL3D_PY 指定）`,
   };
 }
 

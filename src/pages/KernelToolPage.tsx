@@ -59,7 +59,7 @@ export default function KernelToolPage() {
           + `${info.actions?.length ?? 0} 个动作 / ${info.figures?.length ?? 0} 张图）`, 'ok');
       } else {
         k.log('未能读取内核自述（/api/kernel3d/info）—— 下拉选项与默认值将缺失；'
-          + '请检查 KERNEL3D_REPO_PATH 与 Python 解释器', 'err');
+          + '内置内核应在 kernel3d/，Python 解释器由 KERNEL3D_PY 指定（容器内已写死 /opt/venv/bin/python）', 'err');
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps

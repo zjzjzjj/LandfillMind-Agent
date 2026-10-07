@@ -21,6 +21,10 @@ ui-test-report.json
 # Debug 截图与探针脚本
 .debug/
 
+# 内置三维内核（kernel3d/）的 Python 字节码
+__pycache__/
+*.pyc
+
 # OGS 求解器与场景模板是打包资产，需随仓库提交（覆盖上面的 data/ 忽略）
 !data/ogs/
 data/ogs/*

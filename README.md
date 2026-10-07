@@ -13,7 +13,7 @@
 | **稳定化计算（OGS）** | 确定性数值内核：产气（ADM1）/ 降解 / 沉降（Terzaghi），可对话触发、可 GUI 操作，同一引擎 |
 | **AI 生成 3D 场景** | 对话输入"建一个缓坡山谷型 500 万 m³ 的填埋场" → `build_scene` 工具 → 8 维 GeoParams。注：v5.3 起经典风格化示意场景页（`/scene-classic`）随两个 3D 入口合并而退役，卡片按钮改指 `/tool` 的内核真实几何 |
 | **三维建模分析（核心）** | 侧边栏「三维建模分析」（`/tool`，**全屏**）= 桌面工具（Landfill 3D Tool v1.7.0）的 1:1 Web 复刻，**同时是查看器与建模分析工作台**（v5.3 起与原「3D 模拟」合并 —— 两者渲染的本就是同一份会话几何）。界面照桌面骨架：菜单栏（工程/帮助）+ 品牌条 + 工具栏 + [左栏参数控制台 400px ｜ 中央图形区 ｜ 右侧结果条 340px] + 状态栏；左栏四页签与桌面页一一对应（建模 / 计算[库容·坡度·剖面·沉降·稳定性] / 污染 / 开挖）；中央 9 视图条 + 子视图条 + three.js 真实三维网格（旋转/缩放/剖切/线框/垂直夸张/⑥三维显示 叠加层）；开挖页带**画布**（拖线切割/点边设坡比/一键四区/撤销，几何内核真算）、**逐阶段开挖**、**测点散点建模**（粘贴/CSV）、**打开与另存工程**、**导出当前图 PNG 300dpi / PDF / SVG / 底层数据 CSV**、Excel/Word 报告；计算直驱内核（`POST /api/kernel3d/run`，落 tool_runs，带口径戳），建模即时刷新三维 |
-| **权威内核 3D Tool（同机）** | `run_3d_kernel` 两条分支：`module=` 内置示例场五模块快查（capacity/stability/settlement/pollution_chain，physics 口径守卫）；`action=` 自定义场地会话模式——对话建模/增量改模（rect/poly/多单元/分级开挖/内置示例场 `spec.demo`）→ 稳定性扫描 / 沉降 / 开挖 / 污染全链路，结果带**准确分析 PNG 图与可下载简报**，"在 3D 场景查看"改指 `/tool`。配置 `KERNEL3D_REPO_PATH` / `KERNEL3D_PY`（见 .env.example），未配置返回可读错误信封 |
+| **内置权威内核（`kernel3d/`）** | `run_3d_kernel` 两条分支：`module=` 内置示例场五模块快查（capacity/stability/settlement/pollution_chain，physics 口径守卫）；`action=` 自定义场地会话模式——对话建模/增量改模（rect/poly/多单元/分级开挖/内置示例场 `spec.demo`）→ 稳定性扫描 / 沉降 / 开挖 / 污染全链路，结果带**准确分析 PNG 图与可下载简报**，"在 3D 场景查看"改指 `/tool`。内核（`landfill3d` v1.7.2-rb + `agent_bridge.py`）**随仓库内置在 `kernel3d/`**，本地零配置、Docker 镜像内同样可跑；`KERNEL3D_REPO_PATH` 只在要调别的内核副本时设，`KERNEL3D_PY` 覆盖解释器（依赖见 `kernel3d/requirements.txt`），缺失时返回可读错误信封 |
 | **工程报告** | `generate_report` 工具 / `POST /api/report`：从 tool_runs 可追溯记录组装报告（执行摘要/输入参数含出处/结果与分级），复制 Markdown / 下载 .md / .json |
 | **实时 IoT 感知** | 嵌入式 MQTT broker + 5 个 mock 传感器（CH₄/H₂S/水位/沉降/温度），3D 仿真器实时监测面板按阈值分级 |
 | **计算工具库（附属）** | 原"计算中心"降级为附属工具库；14 项计算器作为 `calculate` 工具的核心（参数元数据单一来源 `server/calc-meta.ts`） |
@@ -36,7 +36,7 @@ execTool(name, args, ctx)  ← 统一调度器（server/tools.ts）
    ├── kb_lookup         → retrieval.ts 混合检索
    ├── run_diagnosis     → diagnose.ts 双引擎
    ├── run_3d_kernel     → kernel3d.ts（module 快查走 stdin 桥；action 会话模式 spawn
-   │                       Landfill 3D Tool/agent_bridge.py 文件桥 + 产物路由 /api/kernel3d/*）
+   │                       内置 kernel3d/agent_bridge.py 文件桥 + 产物路由 /api/kernel3d/*）
    ├── deep_analysis     → multiagent.ts 多智能体深度分析（内部真调上述工具）
    └── generate_report   → report.ts（tool_runs → Markdown/sections）
         ▼
@@ -98,6 +98,11 @@ npm run dev
 # 前端：http://localhost:5173
 # 后端：http://localhost:3000
 
+# 三维内核无需单独准备：代码已内置在 kernel3d/，只要本机有带
+# numpy/scipy/matplotlib 的 Python 就能用（Windows 默认 `py`，类 Unix 默认
+# `python3`，可用 KERNEL3D_PY 指定绝对路径）。缺失时 /tool 与 run_3d_kernel
+# 给可读错误，不影响其它 8 个工具。
+
 # 4. 生产构建
 npm run build
 npm run server
@@ -138,6 +143,7 @@ docker run -d -p 3000:3000 \
 
 - **前端**：React 18 + TypeScript + Vite 5 + Tailwind CSS + Framer Motion + Three.js
 - **后端**：Node.js + Express + tsx + sql.js (SQLite WASM)
+- **工程内核**：Python 3.12（numpy + scipy + matplotlib，可选 openpyxl/python-docx），随仓库内置于 `kernel3d/`，经 `agent_bridge.py` 文件桥按动作 spawn；容器内由 Dockerfile 装入 `/opt/venv`
 - **AI**：三通道 —— 智谱 GLM 直连（默认免费档，串行队列）、OpenRouter 可选（信号量 3 路）、DeepSeek 官方直连可选（信号量 3 路，模型锁定 `deepseek-flash`）；CodeBuddy Agent SDK 已预埋接口待 CodeBuddy 主通道启用
 - **通信**：SSE 流式推送
 

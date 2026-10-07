@@ -8,6 +8,9 @@ services:
     region: singapore
     dockerfilePath: ./Dockerfile
     healthCheckPath: /api/health
+    # 三维内核随仓库内置（kernel3d/），Dockerfile 已为镜像装好 /opt/venv 的
+    # numpy/scipy/matplotlib 与 fonts-noto-cjk，无需在此配 KERNEL3D_*。
+    # 注意：免费层 0.1 CPU / 512MB 跑不动重扫描（稳定性全域搜索、羽流），见 DEPLOY.md §5。
     envVars:
       - key: NODE_ENV
         value: production
