@@ -1,18 +1,66 @@
 /**
  * chrome/ResultRail.tsx · 右侧结果条（桌面 app.py:4174-4209，固定宽 340px）
  *
- * 桌面这里是**图右侧的固定列**，不是图下方的一条：
- * Notebook 两页签「计算结果表」/「运行日志」。
- * 注意「▣ 隐藏结果/日志」隐藏的就是这一列（不是图下方的条）。
- *
- * 结果表 = headings-only Treeview 的等价物：**动态列**，列头 PANEL2 底 +
- * ACCENT 字，行高 30；首列宽 130、其余 90（桌面 _fill_result 的口径）。
+ * 结果条三段：
+ *  1. 关键数值卡片（内核 data.key_numbers，最多展示 8 个，可展开）—— 重要数字
+ *     不再埋在表格里；
+ *  2. 计算结果表（数值列自动右对齐 + 斑马纹 + 长文本 title tooltip）；
+ *  3. 汇总 + 口径戳（底部固定）。
  */
-import { useMemo } from 'react';
-import { useTool, useUi } from '../state/context';
-import { useUiValue } from '../state/context';
+import { useMemo, useState } from 'react';
+import { useTool, useUi, useUiValue } from '../state/context';
 import { Dim, TabBtn } from '../ui/Primitives';
 import { downloadTableCsv } from '../state/api';
+
+const MAX_CARDS = 8;
+
+/** 数值美化：数字加千分位，布尔/长文本截断 */
+function fmtVal(v: unknown): string {
+  if (v === null || v === undefined || v === '') return '—';
+  if (typeof v === 'number') {
+    return Number.isInteger(v) ? v.toLocaleString('en-US')
+      : (Math.abs(v) >= 1000 ? v.toLocaleString('en-US', { maximumFractionDigits: 1 })
+          : String(Math.round(v * 1000) / 1000));
+  }
+  if (typeof v === 'boolean') return v ? '是' : '否';
+  const s = String(v);
+  return s.length > 42 ? s.slice(0, 40) + '…' : s;
+}
+
+function KeyCards({ kn }: { kn: Record<string, unknown> }) {
+  const [open, setOpen] = useState(false);
+  const entries = useMemo(() => Object.entries(kn)
+    .filter(([, v]) => v !== null && v !== undefined && v !== '')
+    .slice(0, open ? 24 : MAX_CARDS), [kn, open]);
+  const total = useMemo(() => Object.values(kn)
+    .filter((v) => v !== null && v !== undefined && v !== '').length, [kn]);
+  return (
+    <div className="px-2 pt-2 shrink-0">
+      <div className="grid grid-cols-2 gap-1">
+        {entries.map(([k, v]) => (
+          <div key={k} title={k}
+               className="lf-kcard"
+               style={{ background: 'var(--lf-panel2, #e8eff8)', borderRadius: 4,
+                        padding: '4px 6px', border: '1px solid var(--border)' }}>
+            <p className="lf-dim" style={{ fontSize: 9, lineHeight: 1.3, whiteSpace: 'nowrap',
+                                           overflow: 'hidden', textOverflow: 'ellipsis' }}>{k}</p>
+            <p className="lf-mono" style={{ fontSize: 11.5, lineHeight: 1.4,
+                                             color: 'var(--text-primary)', fontWeight: 600 }}>
+              {fmtVal(v)}
+            </p>
+          </div>
+        ))}
+      </div>
+      {total > MAX_CARDS && (
+        <button type="button" className="lf-fold mt-1"
+                onClick={() => setOpen((o) => !o)}
+                style={{ width: '100%', textAlign: 'center' }}>
+          {open ? '收起关键数值 ▲' : `展开全部关键数值（${total}）▼`}
+        </button>
+      )}
+    </div>
+  );
+}
 
 export function LogPane() {
   const { k } = useTool();
@@ -37,6 +85,14 @@ export function ResultTable() {
   const cols = t?.cols || [];
   const rows = (t?.rows || []).slice(0, 300);
 
+  // 数值列探测：样本里 60% 以上可解析为数字 → 右对齐等宽
+  const numCol = useMemo(() => cols.map((_, j) => {
+    const sample = rows.slice(0, 30).map((r) => r[j]);
+    const hit = sample.filter((v) => v !== null && v !== undefined && v !== ''
+      && !Number.isNaN(Number(String(v).replace(/[, %]/g, '')))).length;
+    return sample.length > 0 && hit / sample.length >= 0.6;
+  }), [cols, rows]);
+
   if (!cols.length) {
     return (
       <div className="flex-1 min-h-0 flex items-center justify-center p-3">
@@ -56,21 +112,27 @@ export function ResultTable() {
         </button>
       </div>
       <div className="overflow-auto flex-1 min-h-0">
-        <table className="lf-table">
+        <table className="lf-table lf-table-zebra">
           <thead>
             <tr>
               {cols.map((c, i) => (
-                <th key={i} style={{ minWidth: i === 0 ? 130 : 90 }}>{c}</th>
+                <th key={i} style={{ minWidth: i === 0 ? 120 : 88,
+                                      textAlign: numCol[i] ? 'right' : 'left' }}>{c}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {rows.map((r, i) => (
               <tr key={i} onClick={() => ui.set('view', view)}>
-                {r.map((v, j) => (
-                  <td key={j}>{v === null || v === undefined || v === ''
-                    ? <span className="lf-dim">—</span> : String(v)}</td>
-                ))}
+                {r.map((v, j) => {
+                  const s = v === null || v === undefined || v === '' ? null : String(v);
+                  return (
+                    <td key={j} title={s ?? undefined}
+                        style={{ textAlign: s && numCol[j] ? 'right' : 'left' }}>
+                      {s === null ? <span className="lf-dim">—</span> : s}
+                    </td>
+                  );
+                })}
               </tr>
             ))}
           </tbody>
@@ -85,13 +147,14 @@ export default function ResultRail() {
   const [tab, setTab] = useUi<'table' | 'log'>('resultTab');
   const hidden = useUiValue<boolean>('bottomHidden');
   const { k } = useTool();
-  const objInfo = k.pool['3d'];
+  const view = useUiValue<string>('view');
+  const entry = k.pool[view] || k.pool['3d'];
 
   const stampText = useMemo(() => {
-    const s = objInfo?.stamp;
+    const s = entry?.stamp;
     if (!s) return '';
     return [s.version && `v${s.version}`, s.physics, s.kernel].filter(Boolean).join(' · ');
-  }, [objInfo]);
+  }, [entry]);
 
   if (hidden) return null;
 
@@ -104,13 +167,20 @@ export default function ResultRail() {
       </div>
       <div className="flex flex-col flex-1 min-h-0"
            style={{ borderTop: '1px solid var(--border)' }}>
-        {tab === 'table' ? <ResultTable /> : <LogPane />}
+        {tab === 'table' ? (
+          <>
+            {entry?.keyNumbers && Object.keys(entry.keyNumbers).length > 0 && (
+              <KeyCards kn={entry.keyNumbers} />
+            )}
+            <ResultTable />
+          </>
+        ) : <LogPane />}
       </div>
-      {(objInfo?.summary || stampText) && (
+      {(entry?.summary || stampText) && (
         <div className="px-2 py-1.5 shrink-0 text-[11px] leading-[1.6]"
              style={{ borderTop: '1px solid var(--border)' }}>
-          {objInfo?.summary && (
-            <p style={{ color: 'var(--text-primary)' }}>{objInfo.summary}</p>
+          {entry?.summary && (
+            <p style={{ color: 'var(--text-primary)' }}>{entry.summary}</p>
           )}
           {stampText && <p className="lf-dim lf-mono">口径 {stampText}</p>}
         </div>

@@ -34,6 +34,8 @@ export interface PoolEntry {
   /** 当前子视图键（桌面子视图条上的键） */
   sub?: string;
   table?: { cols?: string[]; rows?: unknown[][] } | null;
+  /** 关键数值（内核 data.key_numbers）：结果条顶部卡片优先展示 */
+  keyNumbers?: Record<string, unknown> | null;
   summary?: string;
   grade?: string | null;
   stamp?: Record<string, string>;
@@ -187,6 +189,8 @@ export function useKernelRun() {
         figs: r.figures || [],
         sub: map.sub,
         table: r.data?.table ?? null,
+        keyNumbers: (r.data?.key_numbers && typeof r.data.key_numbers === 'object')
+          ? r.data.key_numbers : null,
         summary: r.summary,
         grade: r.grade ?? null,
         stamp: r.stamp,
@@ -217,6 +221,7 @@ export function useKernelRun() {
             ...prev, ...entry,
             figs: merged,
             table: entry.table ?? prev?.table ?? null,
+            keyNumbers: entry.keyNumbers ?? prev?.keyNumbers ?? null,
             summary: entry.summary || prev?.summary,
             reportUrl: entry.reportUrl ?? prev?.reportUrl,
             curve: entry.curve ?? prev?.curve ?? null,

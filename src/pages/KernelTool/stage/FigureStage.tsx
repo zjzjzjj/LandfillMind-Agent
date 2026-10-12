@@ -7,13 +7,35 @@
  *  3. 二维结果图 —— 当前子视图的 PNG（PNG 池里按 fig.key 取）
  *
  * 无数据时给桌面同款占位图（圆圈 marker + 文案），不是空白。
+ * 结果图/内核图**点击放大**：右栏/中央都看不清的密集图件，弹全屏看原始分辨率
+ * （Esc 或点击遮罩关闭）。
  */
-import { useMemo, type MutableRefObject } from 'react';
+import { useEffect, useMemo, useState, type MutableRefObject } from 'react';
 import KernelMeshView, { type MeshApi, type MeshStatus } from '../../../components/KernelMeshView';
 import { useTool, useFormValue, useUiValue } from '../state/context';
 import { useActions } from '../state/actions';
 import { KERNEL_3D_FIG, RENDERABLE, SUB_BARS, VIEW_LABEL, type ViewKey } from '../spec/views';
 import { Dim } from '../ui/Primitives';
+
+/** 全屏放大遮罩：原始分辨率 PNG，Esc/点击关闭 */
+export function Lightbox({ url, label, onClose }: { url: string; label: string; onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+  return (
+    <div className="fixed inset-0 z-[80] flex flex-col items-center justify-center p-6 cursor-zoom-out"
+         style={{ background: 'rgba(8, 14, 24, 0.88)' }}
+         onClick={onClose}>
+      <p className="mb-2 text-[12px]" style={{ color: '#dbe4ee' }}>{label}（原始分辨率 · 点击任意处或按 Esc 关闭）</p>
+      <img src={url} alt={label}
+           className="max-w-full max-h-full object-contain rounded shadow-2xl"
+           style={{ background: '#fff' }}
+           onClick={(e) => e.stopPropagation()} />
+    </div>
+  );
+}
 
 /** 桌面同款占位图：圆圈 marker + 文案（app.py:5888-5904） */
 export function Placeholder({ text }: { text?: string }) {
@@ -117,6 +139,7 @@ export default function FigureStage({
 
   const is3d = view === '3d';
   const kernelFig = entry?.figs?.find((f) => f.key === KERNEL_3D_FIG);
+  const [zoom, setZoom] = useState<{ url: string; label: string } | null>(null);
   // ---- 逐阶段工件 (P3)：ui.stage3d 命中时 3D 吃该阶段 OBJ、阶段剖面吃该
   // 阶段 PNG —— 下拉切换变成纯 UI 操作, 不再重跑内核 ----
   const stage3dIdx = useUiValue<number | null>('stage3d');
@@ -154,7 +177,8 @@ export default function FigureStage({
       {is3d && kernelImage && (
         kernelFig ? (
           <img src={kernelFig.url} alt="内核三维图"
-               className="absolute inset-0 w-full h-full object-contain" />
+               className="absolute inset-0 w-full h-full object-contain cursor-zoom-in"
+               onClick={() => setZoom({ url: kernelFig.url, label: '内核三维图' })} />
         ) : (
           <Placeholder text="内核三维图还没生成 —— 点一次「执行建模」或「导出当前图」" />
         )
@@ -162,10 +186,17 @@ export default function FigureStage({
 
       {!is3d && (curFig || stageFigUrl ? (
         <img src={stageFigUrl ?? curFig!.url} alt={stageHit ? `阶段 ${stageHit.stage} 剖面` : (curFig?.label ?? '')}
-             className="absolute inset-0 w-full h-full object-contain" />
+             className="absolute inset-0 w-full h-full object-contain cursor-zoom-in"
+             onClick={() => setZoom({
+               url: stageFigUrl ?? curFig!.url,
+               label: stageHit ? `阶段 ${stageHit.stage} 剖面` : (curFig?.label ?? (VIEW_LABEL[view] || view)),
+             })} />
       ) : (
         <Placeholder text={`「${VIEW_LABEL[view] || view}」还没有结果`} />
       ))}
+
+      {/* 图片放大遮罩 */}
+      {zoom && <Lightbox url={zoom.url} label={zoom.label} onClose={() => setZoom(null)} />}
 
       {/* 忙指示（桌面没有，但内核动作可能跑几十秒，需要可见反馈） */}
       {k.busy && (
