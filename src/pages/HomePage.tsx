@@ -1,11 +1,7 @@
 import { lazy, Suspense, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence, useInView } from 'framer-motion';
-import { Stethoscope, Calculator, MessageCircle, ArrowRight, Shield, Zap, BookOpen, HardHat, Printer, X, Sparkles, TrendingUp, Layers, Cpu, Activity } from 'lucide-react';
-import type { DiagnosisResult } from '../types';
-import { buildSafetyBrief } from '../utils/safetyBrief';
-import { openPrintableHtml, exportEmergencyPosterHtml } from '../utils/exporter';
-import { generateEmergencyPosterHtml, getDemoEmergencyData } from '../utils/emergencyPoster';
+import { motion, useInView } from 'framer-motion';
+import { Stethoscope, Calculator, MessageCircle, ArrowRight, Shield, BookOpen, Sparkles, TrendingUp, Layers, Cpu, Activity } from 'lucide-react';
 import { PAGE_MAXW, widePx } from '../utils/layout';
 // 3D 场景约 500KB（three.js），懒加载避免拖慢首页首屏
 const LandfillScene3D = lazy(() => import('../components/LandfillScene3D'));
@@ -174,57 +170,6 @@ export default function HomePage() {
   const startChatWith = (question: string) => {
     sessionStorage.setItem('chat-prefill', question);
     navigate('/chat/new');
-  };
-
-  // 现场一键应急模式（差异化创新功能·想法 5）：3 秒拿到一张完整决策包 PDF
-  // - 弹出全屏预览 modal
-  // - 提供"🖨 一键打印"调用浏览器原生打印 / 另存为 PDF
-  // - 同时提供"📤 在新标签页打开"（适合发微信群 / 张贴 QR 海报）
-  const [emergencyOpen, setEmergencyOpen] = useState(false);
-  const [emergencyData] = useState(() => getDemoEmergencyData());
-  const emergencyHtml = emergencyOpen
-    ? generateEmergencyPosterHtml(emergencyData.diagnosis, emergencyData.siteName)
-    : '';
-  const openEmergency = () => setEmergencyOpen(true);
-  const closeEmergency = () => setEmergencyOpen(false);
-  // 新标签页打开完整决策包（适合微信群发、海报打印机）
-  const openEmergencyInNewTab = () => {
-    void exportEmergencyPosterHtml(emergencyData.diagnosis, emergencyData.siteName);
-  };
-
-  // 首页"今日班前交底卡"默认示例：未完成诊断时也能让评委一眼看到工友视角
-  // 使用最常见的边坡+渗滤液组合（演示场地 LF-01），保持 buildSafetyBrief 纯确定性路径
-  const handlePrintBrief = () => {
-    const demoResult: DiagnosisResult = {
-      overallRisk: 'orange',
-      risks: [
-        {
-          id: 'demo-slope', category: '边坡', title: '填埋场整体稳定',
-          description: '示范场地 Fs ≈ 1.18，低于 CJJ 176 运行期要求 ≥ 1.30，存在滑坡/失稳隐患。',
-          level: 'orange', value: 'Fs ≈ 1.18', unit: '', threshold: 'Fs ≥ 1.30',
-          suggestion: '降低渗滤液水位、加密位移监测、必要时进行稳定化加固（放缓坡比 / 减重 / 注浆）。',
-        },
-        {
-          id: 'demo-leachate', category: '渗滤液', title: '渗滤液液位偏高',
-          description: '示范场地液位埋深仅 1.2m，抬高孔隙水压力并易引发渗漏。',
-          level: 'orange', value: '水位埋深≈1.2 m', unit: '', threshold: '≥ 1.5 m',
-          suggestion: '提升抽排能力、疏通导排盲沟，雨前加密巡查。',
-        },
-      ],
-      report: {
-        overview: '示范场地 LF-01 综合风险等级：较大风险（橙色）。主要隐患：边坡 Fs 偏低、渗滤液液位偏高。建议班前重点交底：边坡警戒与下井作业安全。',
-        sections: [],
-        regulations: ['CJJ 176-2012', 'GB 16889-2008'],
-        actions: {
-          immediate: ['班前测气：CH₄、H₂S 双报警仪', '雨后先巡查裂缝再作业'],
-          shortTerm: [],
-          longTerm: [],
-        },
-        monitoring: ['边坡位移监测每日一次', '渗滤液液位每 4 小时记录'],
-        conclusion: '示范场地当前为较大风险，请班组完成今日交底卡后签字再上岗。',
-      },
-    };
-    openPrintableHtml('今日班前安全交底卡', buildSafetyBrief(demoResult, '示范场地 LF-01'));
   };
 
   return (
@@ -444,7 +389,7 @@ export default function HomePage() {
               { v: 76, suffix: '+', l: '规范知识条目', s: '30+ 国家行业标准', c: '#0ea5b7' },
               { v: 12, suffix: '', l: '工程计算器', s: 'Fs / HELP / LandGEM / 沉降…', c: '#2563eb' },
               { v: 5, suffix: ' 维', l: '风险评估维度', s: '边坡·渗滤液·填埋气·地下水·综合', c: '#7c3aed' },
-              { v: 3, suffix: ' 秒', l: '应急决策出稿', s: '诊断+交底+风险矩阵+疏散', c: '#ea580c' },
+              { v: 9, suffix: ' 个', l: '智能体工具', s: 'OGS · 3D · 计算 · 诊断 · 报告', c: '#ea580c' },
             ].map((m, i) => (
               <motion.div key={i} variants={itemVariants} className="p-5 md:p-6 text-center relative group">
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -556,168 +501,6 @@ export default function HomePage() {
           </motion.div>
         </motion.div>
       </section>
-
-      {/* ===== 工友安全 ===== */}
-      <section className={`${PAGE_MAXW} px-6 3xl:px-8 pb-10`}>
-        <div className="rounded-2xl border p-5" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-surface)' }}>
-          <div className="flex items-center gap-2 mb-1">
-            <HardHat size={16} style={{ color: '#f59e0b' }} />
-            <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>工友安全</h2>
-          </div>
-          <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
-            污染场地修复的每一道工序背后都是一线工友。把规范条文翻译成工友听得懂的安全须知，把应急能力落到班组。
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <button
-              onClick={handlePrintBrief}
-              className="group text-left rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5"
-              style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-elevated)' }}
-            >
-              <div className="flex items-center gap-2 mb-1.5">
-                <Printer size={14} style={{ color: '#f59e0b' }} />
-                <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>📋 生成今日班前交底卡（打印）</span>
-                <ArrowRight size={12} className="ml-auto transition-transform group-hover:translate-x-0.5" style={{ color: 'var(--text-muted)' }} />
-              </div>
-              <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                把 AI 快诊里的红/橙风险自动翻译成工友听得懂的交底卡，一键打印或导出 PDF，班组签字即可上岗。
-              </p>
-            </button>
-            <button
-              onClick={() => startChatWith('我是填埋场班组安全员，工友上岗前我要确认哪些防护要点？边坡警戒、下井测气、H₂S/CH₄ 防护、应急疏散？')}
-              className="group text-left rounded-xl border p-4 transition-all duration-200 hover:-translate-y-0.5"
-              style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-elevated)' }}
-            >
-              <div className="flex items-center gap-2 mb-1.5">
-                <Shield size={14} style={{ color: '#10b981' }} />
-                <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>🛡 咨询安全专家</span>
-                <ArrowRight size={12} className="ml-auto transition-transform group-hover:translate-x-0.5" style={{ color: 'var(--text-muted)' }} />
-              </div>
-              <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                跳转 AI 助手，进一步咨询 H₂S/CH₄ 防护、有限空间作业、应急疏散与三级响应等问题。
-              </p>
-            </button>
-          </div>
-          {/* ===== ⚡ 现场一键应急模式（差异化创新·想法 5） ===== */}
-          <motion.button
-            onClick={openEmergency}
-            whileHover={{ scale: 1.01, y: -1 }}
-            whileTap={{ scale: 0.99 }}
-            className="mt-3 w-full text-left rounded-xl p-4 flex items-center gap-4 transition-shadow duration-200"
-            style={{
-              background: 'linear-gradient(135deg, #b91c1c 0%, #ea580c 60%, #f59e0b 100%)',
-              color: '#fff',
-              boxShadow: '0 10px 30px rgba(185,28,28,0.35)',
-              border: '1px solid rgba(255,255,255,0.18)',
-            }}
-          >
-            <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ backgroundColor: 'rgba(255,255,255,0.18)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.25)' }}
-            >
-              <Zap size={22} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-base font-bold tracking-wide">⚡ 现场一键应急模式（3 秒拿到决策包）</span>
-                <span
-                  className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.25)', color: '#fff' }}
-                >
-                  NEW
-                </span>
-              </div>
-              <p className="text-xs leading-relaxed" style={{ color: 'rgba(255,255,255,0.92)' }}>
-                一键合并：诊断报告摘要 + 班前安全交底卡 + 风险矩阵（4×4）+ 应急疏散路线 + 现场 QR 海报
-                → 一张 A4 海报，可直接打印 / 微信群发 / 张贴。
-              </p>
-            </div>
-            <ArrowRight size={18} className="flex-shrink-0" style={{ color: '#fff' }} />
-          </motion.button>
-        </div>
-      </section>
-
-      {/* ===== ⚡ 现场应急决策包 全屏预览 modal ===== */}
-      <AnimatePresence>
-        {emergencyOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.18 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            style={{ backgroundColor: 'rgba(2,6,23,0.78)', backdropFilter: 'blur(6px)' }}
-            onClick={closeEmergency}
-          >
-            <motion.div
-              initial={{ scale: 0.96, y: 12 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.96, y: 12 }}
-              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-              className="relative w-full max-w-5xl h-[92vh] rounded-2xl overflow-hidden flex flex-col"
-              style={{ backgroundColor: 'var(--bg-base)', border: '1px solid var(--border)', boxShadow: '0 30px 80px rgba(0,0,0,0.5)' }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* modal 顶部条 */}
-              <div
-                className="flex items-center gap-3 px-5 py-3 border-b"
-                style={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border)' }}
-              >
-                <div
-                  className="w-9 h-9 rounded-lg flex items-center justify-center"
-                  style={{ background: 'linear-gradient(135deg, #b91c1c, #f59e0b)', color: '#fff' }}
-                >
-                  <Zap size={18} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                    ⚡ 现场应急决策包预览 · {emergencyData.siteName}
-                  </div>
-                  <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                    诊断摘要 + 班前交底卡 + 风险矩阵 + 疏散路线 + QR 海报 · 一张 A4 即可打印
-                  </div>
-                </div>
-                <button
-                  onClick={openEmergencyInNewTab}
-                  className="text-xs px-3 py-1.5 rounded-lg border transition-colors duration-150"
-                  style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)', backgroundColor: 'var(--bg-elevated)' }}
-                  title="在新标签页打开完整决策包，方便微信群发 / 打印机调用"
-                >
-                  📤 新标签页打开
-                </button>
-                <button
-                  onClick={() => {
-                    // 直接调用预览 iframe 的 window.print，绕过 Blob URL
-                    const iframe = document.getElementById('emergency-preview-iframe') as HTMLIFrameElement | null;
-                    if (iframe && iframe.contentWindow) iframe.contentWindow.print();
-                  }}
-                  className="text-xs px-3 py-1.5 rounded-lg font-semibold text-white"
-                  style={{ background: 'linear-gradient(135deg, #b91c1c, #ea580c)' }}
-                >
-                  🖨 一键打印
-                </button>
-                <button
-                  onClick={closeEmergency}
-                  aria-label="关闭"
-                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors duration-150"
-                  style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-secondary)' }}
-                >
-                  <X size={16} />
-                </button>
-              </div>
-              {/* iframe 预览：把完整 HTML 灌进 srcDoc，避免弹窗拦截 */}
-              <div className="flex-1 overflow-hidden" style={{ backgroundColor: '#0f172a' }}>
-                <iframe
-                  id="emergency-preview-iframe"
-                  title="现场应急决策包预览"
-                  srcDoc={emergencyHtml}
-                  className="w-full h-full border-0"
-                  style={{ backgroundColor: '#fff' }}
-                />
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* ===== 规范依据 ===== */}
       <section

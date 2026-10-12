@@ -109,24 +109,6 @@ ${markdownToHtml(md)}
   if (win) setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
-/**
- * 现场应急决策包导出（差异化创新功能）
- * 把"诊断报告摘要 + 班前交底卡 + 风险矩阵 + 疏散路线 + 现场 QR 海报"
- * 合并为一张可直接打印 / 微信群发 / 张贴的 A4 海报。
- * 海报完整 HTML 由 emergencyPoster.generateEmergencyPosterHtml 生成，
- * 本函数复用 openPrintableHtml 的 Blob + window.open 打印管线。
- *
- * 实现：使用动态 import() 避开 exporter ↔ emergencyPoster 的循环依赖
- * （emergencyPoster 需要本文件的 markdownToHtml，本函数又需要 emergencyPoster）。
- */
-export async function exportEmergencyPosterHtml(diagnosis: DiagnosisResult, siteName: string) {
-  const mod = await import('./emergencyPoster');
-  const html = mod.generateEmergencyPosterHtml(diagnosis, siteName);
-  const url = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
-  const win = window.open(url, '_blank');
-  if (win) setTimeout(() => URL.revokeObjectURL(url), 60000);
-}
-
 // ======================== 各结果 Markdown 生成 ========================
 
 export function buildDiagnosisMarkdown(result: DiagnosisResult, site?: Record<string, unknown>): string {

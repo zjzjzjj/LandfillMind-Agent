@@ -3,13 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Stethoscope, Upload, Play, ChevronDown, ChevronUp,
-  AlertTriangle, CheckCircle2, Info, X, Shield, FileDown, HardHat, MessageCircle, Gauge, Activity, Droplets, Wind, Layers, Printer, Map as MapIcon,
+  AlertTriangle, CheckCircle2, Info, Shield, FileDown, MessageCircle, Gauge, Activity, Droplets, Wind, Layers,
 } from 'lucide-react';
 import type { RiskLevel, DiagnosisResult, RiskItem } from '../types';
 import { useDetailPref } from '../utils/detailPref';
-import { buildDiagnosisMarkdown, downloadJSON, downloadText, markdownToHtml, openPrintableHtml, timestampName } from '../utils/exporter';
-import { buildSafetyBrief } from '../utils/safetyBrief';
-import { RiskMap, planEscapeRoutes } from '../components/RiskMap';
+import { buildDiagnosisMarkdown, downloadJSON, downloadText, openPrintableHtml, timestampName } from '../utils/exporter';
 import { VerificationTheater } from '../components/VerificationTheater';
 
 // ========================
@@ -302,8 +300,6 @@ export default function DiagnosisPage() {
   // 短暂 toast 提示（演示数据加载/手动操作反馈）
   const [toast, setToast] = useState<string>('');
   const [formExpanded, setFormExpanded] = useState({ site: true, slope: true, leachi: false, lfg: false, gw: false });
-  // 班前安全交底卡预览折叠状态（默认折叠）
-  const [briefExpanded, setBriefExpanded] = useState(false);
   const [detail, setDetail] = useDetailPref('diagnose');
   const navigate = useNavigate();
 
@@ -317,44 +313,6 @@ export default function DiagnosisPage() {
       if (SEVERITY_RANK[r.level] > SEVERITY_RANK[cur]) buckets[k] = r.level;
     });
     return buckets;
-  }, [result]);
-
-  // 风险地图适配层：RiskItem（无坐标）→ RiskMap zones/routes
-  // 点位贴合底图设施：边坡隐患在库区西侧坝肩、渗滤液风险靠调节池、
-  // 填埋气在库区中部气井密集区、地下水在下游监测井一线；
-  // 同类别多点位环绕散布避免堆叠。疏散路线经安全走廊至最近集合点。
-  const riskMapData = useMemo(() => {
-    if (!result) return null;
-    const CATEGORY_COORD: Record<string, { x: number; y: number; ring?: number }> = {
-      '边坡': { x: 21, y: 42, ring: 22 },   // 库区西缘/垃圾坝侧
-      '渗滤液': { x: 63, y: 66, ring: 20 }, // 渗滤液调节池附近
-      '填埋气': { x: 44, y: 36, ring: 16 }, // 库区中部
-      '地下水': { x: 44, y: 84, ring: 24 }, // 下游监测井线
-      '综合': { x: 70, y: 48, ring: 18 },   // 场区东部
-    };
-    const hot = (result.risks ?? []).filter(r => r.level === 'red' || r.level === 'orange' || r.level === 'yellow');
-    const zones = hot.map((r, i) => {
-      const coord = CATEGORY_COORD[r.category] ?? CATEGORY_COORD['综合'];
-      const ring = coord.ring ?? 14;
-      // 同类别多点位：按序绕环分布，单点位居中
-      const n = hot.filter(o => (CATEGORY_COORD[o.category] ?? CATEGORY_COORD['综合']) === coord).length;
-      const angle = -Math.PI / 3 + (Math.PI * 2 * i) / Math.max(n, 1);
-      const spread = n > 1 ? ring * 0.55 : 0;
-      const x = Math.max(8, Math.min(90, coord.x + Math.cos(angle) * spread));
-      const y = Math.max(10, Math.min(90, coord.y + Math.sin(angle) * spread));
-      return {
-        id: r.id,
-        label: r.title.length > 8 ? r.title.slice(0, 8) + '…' : r.title,
-        level: r.level,
-        x, y,
-        radius: r.level === 'red' ? 11 : r.level === 'orange' ? 9.5 : 8,
-        description: r.description,
-      };
-    });
-    // 疏散路线：经安全走廊绕行至 A/B 集合点（不横穿库区中心）
-    const routes = planEscapeRoutes(zones);
-    const siteName = String((result.site as any)?.siteName ?? '示范场地 LF-01');
-    return { zones, routes, siteName };
   }, [result]);
 
   // 追问 AI 助手：跳到 /chat/new，带上诊断场景 + 结果摘要 + 引导问题
@@ -381,9 +339,8 @@ export default function DiagnosisPage() {
       '',
       '【请进一步回答】基于上述综合诊断，请给出：',
       '1) 风险机理深度分析与潜在演化路径；',
-      '2) 工友现场作业的防护措施与应急处置清单；',
-      '3) 监测点位布设与监测频率建议；',
-      '4) 何时需要委托专业机构进一步复核。',
+      '2) 监测点位布设与监测频率建议；',
+      '3) 何时需要委托专业机构进一步复核。',
     ].join('\n');
     sessionStorage.setItem('chat-prefill', question);
     sessionStorage.setItem('chat-prefill-expert', JSON.stringify({
@@ -825,15 +782,6 @@ export default function DiagnosisPage() {
                       <MessageCircle size={12} /> 追问 AI 助手
                     </button>
                     <button
-                      onClick={() => openPrintableHtml('班前安全交底卡', buildSafetyBrief(result, String((result.site as any)?.siteName ?? '填埋场作业区')))}
-                      className="text-[11px] px-2.5 py-1 rounded-lg border flex items-center gap-1 transition-colors"
-                      style={{ borderColor: 'rgba(16,185,129,0.5)', color: '#10b981' }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = '#10b981'; e.currentTarget.style.backgroundColor = 'rgba(16,185,129,0.1)'; }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(16,185,129,0.5)'; e.currentTarget.style.backgroundColor = 'transparent'; }}
-                    >
-                      <HardHat size={12} /> 班前安全交底
-                    </button>
-                    <button
                       onClick={() => downloadText(timestampName('诊断报告', 'md'), buildDiagnosisMarkdown(result, toSiteData(formData)))}
                       className="text-[11px] px-2.5 py-1 rounded-lg border flex items-center gap-1 transition-colors"
                       style={{ borderColor: 'var(--border)', color: 'var(--text-secondary)' }}
@@ -895,66 +843,6 @@ export default function DiagnosisPage() {
                   )
                 )}
               </motion.div>
-
-              {/* 班前安全交底卡（折叠预览，默认折叠）—— 把诊断结果转译成工友可签字的纸质交底卡 */}
-              <div className="rounded-xl border overflow-hidden"
-                   style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-surface)' }}>
-                <button
-                  onClick={() => setBriefExpanded(e => !e)}
-                  className="w-full flex items-center justify-between px-4 py-3 text-left transition-colors"
-                  style={{ backgroundColor: 'var(--bg-elevated)' }}
-                >
-                  <div className="flex items-center gap-2">
-                    <HardHat size={14} style={{ color: '#f59e0b' }} />
-                    <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                      📋 班前安全交底卡（预览）
-                    </span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
-                          style={{ backgroundColor: 'rgba(245,158,11,0.12)', color: '#f59e0b' }}>
-                      工友视角
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openPrintableHtml(
-                          '班前安全交底卡',
-                          buildSafetyBrief(result, String((result.site as any)?.siteName ?? '填埋场作业区')),
-                        );
-                      }}
-                      className="text-[11px] px-2 py-1 rounded border flex items-center gap-1 cursor-pointer"
-                      style={{ borderColor: 'rgba(245,158,11,0.5)', color: '#f59e0b' }}
-                      title="一键打印 / 导出 PDF（复用顶部按钮）"
-                    >
-                      <Printer size={11} /> 一键打印 / 导出 PDF
-                    </span>
-                    {briefExpanded
-                      ? <ChevronUp size={14} style={{ color: 'var(--text-muted)' }} />
-                      : <ChevronDown size={14} style={{ color: 'var(--text-muted)' }} />}
-                  </div>
-                </button>
-                <AnimatePresence>
-                  {briefExpanded && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="overflow-hidden"
-                    >
-                      <div
-                        className="p-4 text-xs leading-relaxed"
-                        style={{ color: 'var(--text-secondary)' }}
-                        dangerouslySetInnerHTML={{
-                          __html: markdownToHtml(
-                            buildSafetyBrief(result, String((result.site as any)?.siteName ?? '填埋场作业区')),
-                          ),
-                        }}
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
 
               {/* 二、逐项风险分析（含计算书） */}
               <div>
@@ -1023,42 +911,6 @@ export default function DiagnosisPage() {
                 </div>
               )}
 
-              {/* 六、应急疏散路线 · 场地风险地图（工友视角：可视化的"往哪撤"） */}
-              {riskMapData && riskMapData.zones.length > 0 && (
-                <div className="rounded-xl border p-4" style={{ borderColor: 'var(--border)', backgroundColor: 'var(--bg-surface)' }}>
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <MapIcon size={14} style={{ color: '#16a34a' }} />
-                    <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                      🗺 应急疏散路线 · 场地风险地图
-                    </h2>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
-                          style={{ backgroundColor: 'rgba(22,163,74,0.12)', color: '#16a34a' }}>
-                      {riskMapData.zones.length} 个风险点位
-                    </span>
-                  </div>
-                  <p className="text-[11px] mb-3 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-                    红色 / 橙色风险点位 + 自动生成的疏散路线（基于场地平面图）。
-                    班组长可在班前向工友指认"哪里危险、撤离往哪走"。
-                  </p>
-                  <div className="rounded-lg overflow-hidden inline-block"
-                       style={{ border: '1px solid var(--border)', backgroundColor: 'var(--bg-base)' }}>
-                    <RiskMap
-                      zones={riskMapData.zones}
-                      routes={riskMapData.routes}
-                      siteName={riskMapData.siteName}
-                      workerLocation={{ x: 33, y: 30 }}
-                      width={560}
-                      height={360}
-                    />
-                  </div>
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <span className="text-[10px] px-2 py-1 rounded-full"
-                          style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--text-secondary)' }}>
-                      图例：🔴 红=重大  🟠 橙=较大  🟡 黄=一般  🟢 虚线箭头=应急疏散路线
-                    </span>
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </div>
