@@ -2,10 +2,7 @@ node_modules/
 .env
 dist/
 data/*
-!data/ogs/
-data/ogs/*
-!data/ogs/bin/
-!data/ogs/scenarios/
+paper/
 test-screenshots/
 vite-dev.log
 server-dev.log
@@ -25,8 +22,5 @@ ui-test-report.json
 __pycache__/
 *.pyc
 
-# OGS 求解器与场景模板是打包资产，需随仓库提交（覆盖上面的 data/ 忽略）
-!data/ogs/
-data/ogs/*
-!data/ogs/bin/
-!data/ogs/scenarios/
+# OGS 运行时输出目录（server/ogs.ts 运行期随机 ID 建目录），不入库
+OGS/runs/

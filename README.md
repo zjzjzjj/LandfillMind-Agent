@@ -51,7 +51,7 @@ execTool(name, args, ctx)  ← 统一调度器（server/tools.ts）
 
 ## 稳定化计算（确定性数值内核）
 
-> 数值内核以 OpenGeoSys 5.5 官方算例（Data XCFei 三案例的 ADM1 生化反应模型）为基准复刻标定，全部为**秒出的确定性解析/ODE 内核**，跨平台可部署（Render Linux 容器同样可用）。
+> 数值内核以 OpenGeoSys 5.5 官方算例（Data XCFei 三案例的 ADM1 生化反应模型）为基准复刻标定，全部为**秒出的确定性解析/ODE 内核**，跨平台可部署（Linux 容器同样可用）。
 > 原生 `ogs.exe` 有限元校核路径**目前未启用**：三场景均已挂 `computeOnly` 解析内核，`runOgsScenario` 在解析分支即返回，模板与求解器调用代码保留待接（`getOgsStatus()` 如实报 `solverNative: false`）。
 
 - **三大场景**：
@@ -162,6 +162,5 @@ docker run -d -p 3000:3000 \
 
 ## 上线地址（部署完成后填写）
 
-- **Render（推荐）**：`https://landfillmind.onrender.com`
 - **本地**（开发模式）：`http://localhost:5173`（前端）+ `http://localhost:3000`（后端 API）
 
